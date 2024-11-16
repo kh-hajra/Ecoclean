@@ -1,0 +1,48 @@
+.sewage-cleaning {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+  }
+  
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .icons img {
+    margin-left: 10px;
+    width: 24px;
+    height: 24px;
+  }
+  
+  h2 {
+    font-size: 1.5em;
+    margin: 10px 0;
+  }
+  
+  .price {
+    font-size: 1.2em;
+    color: #4f964f;
+    margin: 5px 0;
+  }
+  
+  .service p {
+    font-size: 1em;
+    margin: 5px 0;
+  }
+  
+  .get-started-btn {
+    padding: 10px;
+    background-color: #4f964f;
+    color: white;
+    font-weight: bold;
+    border: none;
+    width: 100%;
+    margin-top: 20px;
+    cursor: pointer;
+  }
+  
+  .get-started-btn:hover {
+    background-color: #3f7c3f;
+  }
+  

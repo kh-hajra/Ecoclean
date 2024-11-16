@@ -1,0 +1,26 @@
+.outdoor-cleaning {
+    padding: 20px;
+  }
+  
+  header {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .services {
+    display: grid;
+    gap: 10px;
+  }
+  
+  .service {
+    background-color: #f7fcf7;
+    padding: 10px;
+  }
+  
+  button {
+    padding: 10px;
+    background-color: #4f964f;
+    color: white;
+    cursor: pointer;
+  }
+  

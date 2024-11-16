@@ -1,0 +1,6 @@
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  animation: float 15s ease-in-out infinite;
+}
