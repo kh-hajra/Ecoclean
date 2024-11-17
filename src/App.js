@@ -39,7 +39,9 @@ import DuringEventBooking from './components/PreEventBooking';
 import DuringEventCleaning from './components/DuringEventCleaning';
 import PostEventBooking from './components/PreEventBooking';
 import PostEventCleaning from './components/PostEventCleaning';
-
+import Login from './login';
+import SignUp from './signup';
+import SignUpCleaner from './CleanerSignup';
 function App() {
   return (
     <Router>
@@ -53,7 +55,9 @@ function App() {
         </Route>
         <Route path="/ServiceSummary" element={<ServiceSummary />} />
         <Route path="/BookingConfirmation" element={<BookingConfirmation />} />
-
+        <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/signup-cleaner" element={<SignUpCleaner />} />
         {/* Residential Cleaning Routes */}
         <Route path="/CustomCleaning" element={<CustomCleaning />} />
         <Route path="/CustomBooking" element={<CustomBooking />} />
