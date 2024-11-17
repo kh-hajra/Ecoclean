@@ -39,9 +39,9 @@ import DuringEventBooking from './components/PreEventBooking';
 import DuringEventCleaning from './components/DuringEventCleaning';
 import PostEventBooking from './components/PreEventBooking';
 import PostEventCleaning from './components/PostEventCleaning';
-import Login from './login';
-import SignUp from './signup';
-import SignUpCleaner from './CleanerSignup';
+import Login from './components/login';
+import SignUp from './components/signup';
+import SignUpCleaner from './components/CleanerSignup';
 function App() {
   return (
     <Router>
