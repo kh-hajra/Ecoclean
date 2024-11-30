@@ -26,7 +26,7 @@ function ConfirmationScreen() {
             </p>
 
             <Link
-              to="/HomeScreen"
+              to="/"
               className="mt-8 bg-green-600 border border-transparent rounded-md shadow px-5 py-3 inline-flex items-center text-base font-medium text-white hover:bg-green-700 transition-colors duration-150"
             >
               Go to Dashboard

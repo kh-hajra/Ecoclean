@@ -47,26 +47,42 @@ function App() {
     <Router>
       <Routes>
         {/* Main Listings */}
-        <Route path="/" element={<HomeScreen />}>
-          <Route path="residential" element={<Residential />} />
-          <Route path="commercial" element={<Commercial />} />
-          <Route path="outdoor" element={<Outdoor />} />
-          <Route path="event" element={<Event />} />
+         {/* Main Listings */}
+    <Route path="/" element={<HomeScreen />} />
+    
+    {/* Services Routes */}
+    <Route path="/residential" element={<Residential />}>
+  {/* Nested routes for Residential Cleaning */}
+  <Route path="CustomCleaning" element={<CustomCleaning />} />
+  <Route path="standard-cleaning" element={<StandardCleaning />} />
+  <Route path="deep-cleaning" element={<DeepCleaning />} />
+</Route>
+    <Route path="/commercial" element={<Commercial />} />
+    <Route path="/event" element={<Event />}>
+          {/* Nested Event Cleaning Routes */}
+          <Route path="PreEventCleaning" element={<PreEventCleaning />} />
+          <Route path="pre-event-booking" element={<PreEventBooking />} />
+          <Route path="DuringEventCleaning" element={<DuringEventCleaning />} />
+          <Route path="during-event-booking" element={<DuringEventBooking />} />
+          <Route path="PostEventCleaning" element={<PostEventCleaning />} />
+          <Route path="post-event-booking" element={<PostEventBooking />} />
         </Route>
+    <Route path="/outdoor" element={<Outdoor />} />
+        
         <Route path="/ServiceSummary" element={<ServiceSummary />} />
         <Route path="/BookingConfirmation" element={<BookingConfirmation />} />
         <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/signup-cleaner" element={<SignUpCleaner />} />
         {/* Residential Cleaning Routes */}
-        <Route path="/CustomCleaning" element={<CustomCleaning />} />
+        {/* <Route path="/CustomCleaning" element={<CustomCleaning />} />
         <Route path="/CustomBooking" element={<CustomBooking />} />
         <Route path="/StandardCleaning" element={<StandardCleaning />} />
         <Route path="/StandardBooking" element={<StandardBooking />} />
         <Route path="/DeepCleaning" element={<DeepCleaning />} />
         <Route path="DeepBooking" element={<DeepBooking />} />
         <Route path="/MoveinMoveoutCleaning" element={<MoveInMoveOutCleaning />} />
-        <Route path="/MoveinMoveoutBooking" element={<MoveInMoveOutBooking />} />
+        <Route path="/MoveinMoveoutBooking" element={<MoveInMoveOutBooking />} /> */}
 {/* Commercial Cleaning Routes */}
 <Route path="OfficeCleaning" element={<OfficeCleaning />} />
 <Route path="OfficeBooking" element={<OfficeBooking />} />
@@ -79,12 +95,14 @@ function App() {
 <Route path="/ResidentialExteriorCleaning" element={<ResidentialExteriorCleaning />} />
 <Route path="/ResidentialExteriorBooking" element={<ResidentialExteriorBooking />} />
 {/* Event Cleaning Routes */}
-<Route path="/PreEventCleaning" element={<PreEventCleaning />} />
-<Route path="/PreEventBooking" element={<PreEventBooking />} />
-<Route path="/DuringEventCleaning" element={<DuringEventCleaning />} />
-<Route path="/DuringEventBooking" element={<DuringEventBooking />} />
-<Route path="/PostEventCleaning" element={<PostEventCleaning />} />
-<Route path="/PostEventBooking" element={<PostEventBooking />} />
+{/* <Route path="/event-services" element={<Event />}>
+          <Route path="pre-event-cleaning" element={<PreEventCleaning />} />
+          <Route path="pre-event-booking" element={<PreEventBooking />} />
+          <Route path="during-event-cleaning" element={<DuringEventCleaning />} />
+          <Route path="during-event-booking" element={<DuringEventBooking />} />
+          <Route path="post-event-cleaning" element={<PostEventCleaning />} />
+          <Route path="post-event-booking" element={<PostEventBooking />} />
+        </Route> */}
       </Routes>
     </Router>
   );

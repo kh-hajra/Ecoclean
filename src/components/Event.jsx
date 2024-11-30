@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link,Outlet } from 'react-router-dom';
 import { Calendar, Sparkles, Trash2, Clock, Users, ArrowRight } from 'lucide-react';
 
 const eventCleaningServices = [
@@ -35,7 +35,7 @@ function EventCleaningListing() {
             Event <span className="text-purple-600">Cleaning</span> Services
           </h1>
           <p className="mt-4 text-xl text-gray-600 max-w-2xl mx-auto">
-            Professional cleaning solutions for events of all sizes, ensuring a pristine environment from start to finish
+            Professional cleaning solutions for events of all sizes, ensuring a pristine environment from start to finish.
           </p>
         </div>
         <div className="mt-20 grid gap-10 md:grid-cols-2 lg:grid-cols-3">
@@ -52,7 +52,7 @@ function EventCleaningListing() {
               </div>
               <p className="text-lg text-gray-700 mb-6">{service.description}</p>
               <Link
-                to={`/event-services/${service.id}`}
+                to={`/event/${service.id}`} // Corrected path
                 className="inline-flex items-center text-lg font-medium text-purple-600 hover:text-purple-500 transition-colors"
                 aria-label={`Learn more about ${service.title}`}
               >
@@ -71,6 +71,7 @@ function EventCleaningListing() {
             <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
           </Link>
         </div>
+        <Outlet />
       </div>
     </div>
   );

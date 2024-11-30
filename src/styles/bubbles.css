@@ -1,0 +1,52 @@
+.bubble {
+    position: absolute;
+    bottom: -2px;
+    background: radial-gradient(circle at 50% 55%, rgba(240, 245, 255, 0.9), rgba(240, 245, 255, 0.9) 40%, rgba(225, 238, 255, 0.8) 60%, rgba(43, 130, 255, 0.4));
+    border-radius: 50%;
+    box-shadow: inset 0 20px 30px rgba(255, 255, 255, 0.3), inset 0 10px 10px rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.1);
+    height: var(--size);
+    width: var(--size);
+    transform: translateZ(0);
+    animation: rise var(--duration, 4s) ease-in infinite;
+    animation-delay: var(--delay, 0s);
+  }
+  
+  .bubble:before,
+  .bubble:after {
+    content: '';
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    filter: blur(1px);
+  }
+  
+  .bubble:before {
+    width: 4px;
+    height: 4px;
+    top: 20%;
+    left: 15%;
+  }
+  
+  .bubble:after {
+    width: 8px;
+    height: 8px;
+    top: 30%;
+    left: 20%;
+    transform: rotate(40deg);
+  }
+  
+  @keyframes rise {
+    0% {
+      transform: translateY(100%) scale(0.1);
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-100vh) scale(1);
+      opacity: 0;
+    }
+  }
+  
+  

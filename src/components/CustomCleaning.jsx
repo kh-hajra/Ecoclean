@@ -11,8 +11,9 @@ function CustomCleaning() {
     "Schedule at your convenience",
     "Tailor service duration"
   ];
-
+  console.log('CustomCleaning component rendered');
   return (
+    
     <div className="bg-gradient-to-b from-yellow-50 to-orange-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl text-center mb-8">

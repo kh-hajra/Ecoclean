@@ -1,121 +1,288 @@
-import React from 'react';
-import Button from "../components/ui/button";
-import { Card, CardContent } from "../components/ui/card";
-import { ScrollArea, ScrollBar } from "../components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
-import { SprayCanIcon as Spray, UtensilsCrossed, Sofa, Bed, Briefcase, ChevronRight, Star } from 'lucide-react';
+
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-
-const pastelColors = [
-  { bg: 'bg-pink-100', border: 'border-pink-300' },
-  { bg: 'bg-blue-100', border: 'border-blue-300' },
-  { bg: 'bg-green-100', border: 'border-green-300' },
-  { bg: 'bg-yellow-100', border: 'border-yellow-300' },
-  { bg: 'bg-purple-100', border: 'border-purple-300' },
-];
-
+import { SprayCanIcon as Spray, UtensilsCrossed, Sofa, Bed, Briefcase, ChevronRight, Star, Menu, X } from 'lucide-react';
+import placeholderImage from '../assets/images/placeholder.png';
+import '../styles/bubbles.css';
 const services = [
-  { name: 'Residential Cleaning', icon: Spray, description: 'Sparkling clean bathrooms', route: '/residential' },
-  { name: 'Commercial Cleaning', icon: UtensilsCrossed, description: 'Spotless kitchen spaces', route: '/commercial' },
-  { name: 'Event Cleaning', icon: Sofa, description: 'Fresh and tidy living areas', route: '/event' },
-  { name: 'Society Cleaning', icon: Bed, description: 'Cozy and clean bedrooms', route: '/outdoor' },
-  { name: 'Office Cleaning', icon: Briefcase, description: 'Professional workspace cleaning', route: '/office-cleaning' },
+  { name: 'Residential', icon: Spray, description: 'Sparkling clean homes', route: '/residential' },
+  { name: 'Commercial', icon: UtensilsCrossed, description: 'Pristine business spaces', route: '/commercial' },
+  { name: 'Event', icon: Sofa, description: 'Immaculate event venues', route: '/event' },
+  { name: 'Society', icon: Bed, description: 'Tidy community areas', route: '/society' },
+  { name: 'Office', icon: Briefcase, description: 'Professional workspace cleaning', route: '/office' },
 ];
 
 const topCleaners = [
-  { name: 'Alice Johnson', rating: 4.9, image: '/placeholder.svg' },
-  { name: 'Bob Smith', rating: 4.8, image: '/placeholder.svg' },
-  { name: 'Carol Davis', rating: 4.7, image: '/placeholder.svg' },
+  { name: 'Alice Johnson', rating: 4.9, image: 'https://i.pravatar.cc/150?img=1' },
+  { name: 'Bob Smith', rating: 4.8, image: 'https://i.pravatar.cc/150?img=2' },
+  { name: 'Carol Davis', rating: 4.7, image: 'https://i.pravatar.cc/150?img=3' },
 ];
 
 export default function HomeScreen() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+ 
+
+  const animateBubbles = () => {
+    const bubbles = document.querySelectorAll('.bubble');
+    bubbles.forEach((bubble) => {
+      const size = bubble.style.getPropertyValue('--size');
+      const left = bubble.style.getPropertyValue('--left');
+      bubble.animate(
+        [
+          { transform: `translate(${left}, 100%) scale(0)`, opacity: 1 },
+          { transform: `translate(${left}, -100%) scale(1)`, opacity: 0 }
+        ],
+        {
+          duration: Math.random() * 4000 + 2000,
+          iterations: Infinity,
+          delay: Math.random() * 2000,
+        }
+      );
+    });
+  };
+
+  useEffect(() => {
+    animateBubbles();
+  }, []);
+
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-green-50 to-blue-50 relative overflow-hidden">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-        <div className="container flex h-16 items-center">
-          <Link to="/" className="mr-6 flex items-center space-x-2">
-            <Spray className="h-6 w-6 text-green-600" />
-            <span className="hidden font-bold sm:inline-block text-xl">EcoClean</span>
+    <div className="min-h-screen bg-white">
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 ? 'bg-white shadow-md' : 'bg-transparent'}`}>
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <Link to="/" className="flex items-center space-x-2">
+            <Spray className="h-8 w-8 text-green-600" />
+            <span className="text-2xl font-bold text-green-800">EcoClean</span>
           </Link>
-          <nav className="flex flex-1 items-center justify-between space-x-6 text-sm font-medium">
-            <Link to="/" className="text-gray-700 hover:text-green-600 transition-colors">Home</Link>
-            <Link to="/about" className="text-gray-700 hover:text-green-600 transition-colors">About</Link>
-            <Link to="/services" className="text-gray-700 hover:text-green-600 transition-colors">Services</Link>
-            <Link to="/profile" className="text-gray-700 hover:text-green-600 transition-colors">Profile</Link>
+          <nav className="hidden md:flex space-x-8">
+            {['Home', 'Services', 'About', 'Contact'].map((item) => (
+              <Link key={item} to={`/${item.toLowerCase()}`} className="text-green-800 hover:text-green-600 transition-colors">
+                {item}
+              </Link>
+            ))}
           </nav>
+          <div className="hidden md:flex space-x-4">
+            <Link to="/login" className="px-4 py-2 text-green-600 border border-green-600 rounded-full hover:bg-green-600 hover:text-white transition-colors">
+              Log In
+            </Link>
+            <Link to="/signup" className="px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors">
+              Sign Up
+            </Link>
+          </div>
+          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="md:hidden bg-white shadow-lg rounded-b-2xl mx-4 mt-2"
+          >
+            <nav className="flex flex-col p-4 space-y-4">
+              {['Home', 'Services', 'About', 'Contact'].map((item) => (
+                <Link key={item} to={`/${item.toLowerCase()}`} className="text-green-800 hover:text-green-600 transition-colors">
+                  {item}
+                </Link>
+              ))}
+              <Link to="/login" className="px-4 py-2 text-center text-green-600 border border-green-600 rounded-full hover:bg-green-600 hover:text-white transition-colors">
+                Log In
+              </Link>
+              <Link to="/signup" className="px-4 py-2 text-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors">
+                Sign Up
+              </Link>
+            </nav>
+          </motion.div>
+        )}
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 py-12 container px-4 md:px-6">
-        <h1 className="text-4xl font-bold text-green-800 mb-8 text-center md:text-left">Welcome to EcoClean</h1>
-
-        {/* Services Section */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold text-green-700 mb-6">Our Services</h2>
-          <ScrollArea className="w-full whitespace-nowrap rounded-xl border border-green-100 bg-white/80 backdrop-blur-sm shadow-lg">
-            <div className="flex w-max space-x-6 p-6">
-              {services.map((service, index) => (
-                <Card
-                  key={service.name}
-                  className={`w-[280px] cursor-pointer hover:shadow-md transition-all duration-300 border-2 ${pastelColors[index % pastelColors.length].bg} ${pastelColors[index % pastelColors.length].border}`}
-                >
-                  <Link to={service.route}>
-                    <CardContent className="flex flex-col items-start justify-between p-6 h-[200px]">
-                      <div className="w-full">
-                        <div className="flex items-center justify-between mb-4">
-                          {React.createElement(service.icon, { className: "h-10 w-10 text-gray-800" })}
-                          <ChevronRight className="h-5 w-5 text-gray-800" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2">{service.name}</h3>
-                        <p className="text-sm text-gray-700">{service.description}</p>
-                      </div>
-                    </CardContent>
-                  </Link>
-                </Card>
-              ))}
+      <main className="pt-16">
+        <section className="relative overflow-hidden bg-gradient-to-br from-pink-200 to-blue-200 py-16 md:py-24">
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-gradient-to-r from-pink-200 via-green-200 to-blue-200 animate-gradient-x"></div>
+            <div className="absolute inset-0 opacity-50">
+              <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="grain" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="rgba(255,255,255,0.1)" />
+                    <stop offset="20%" stopColor="rgba(255,255,255,0)" />
+                    <stop offset="50%" stopColor="rgba(255,255,255,0.1)" />
+                    <stop offset="70%" stopColor="rgba(255,255,255,0)" />
+                    <stop offset="100%" stopColor="rgba(255,255,255,0.1)" />
+                  </linearGradient>
+                </defs>
+                <path fill="url(#grain)" d="M0 0 L100 0 L100 100 L0 100 Z" />
+              </svg>
             </div>
-            <ScrollBar orientation="horizontal" className="bg-green-100" />
-          </ScrollArea>
+          </div>
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="flex flex-col md:flex-row items-center justify-between">
+              <div className="w-full md:w-1/2 mb-8 md:mb-0">
+                <motion.h1 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-4xl md:text-5xl lg:text-6xl font-bold text-green-800 mb-4"
+                >
+                  Cleanliness Redefined
+                </motion.h1>
+                <motion.p 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="text-lg md:text-xl text-green-700 mb-8"
+                >
+                  Experience the future of cleaning with EcoClean
+                </motion.p>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  <Link to="/book" className="px-6 py-3 bg-white text-green-600 text-lg rounded-full hover:bg-green-100 transition-colors inline-block">
+                    Book Now
+                  </Link>
+                </motion.div>
+              </div>
+              <div className="w-full md:w-1/2">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="relative"
+                >
+                  <svg className="w-full h-auto" viewBox="0 0 500 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <image href={placeholderImage} width="300" height="300" x="50" y="0" />
+                    {/* Bubbles */}
+                    <circle cx="350" cy="50" r="20" fill="rgba(255,255,255,0.5)" />
+                    <circle cx="380" cy="90" r="15" fill="rgba(255,255,255,0.5)" />
+                    <circle cx="330" cy="120" r="25" fill="rgba(255,255,255,0.5)" />
+                    <circle cx="360" cy="150" r="10" fill="rgba(255,255,255,0.5)" />
+                    <circle cx="390" cy="180" r="18" fill="rgba(255,255,255,0.5)" />
+                  </svg>
+                </motion.div>
+              </div>
+            </div>
+          </div>
         </section>
 
-        {/* Top Rated Cleaners Section */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold text-green-700 mb-6">Top Rated Cleaners</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {topCleaners.map((cleaner) => (
-              <Card key={cleaner.name} className="bg-white/80 backdrop-blur-sm hover:shadow-md transition-all duration-300">
-                <CardContent className="flex items-center p-6">
-                  <Avatar className="h-16 w-16 mr-4">
-                    <AvatarImage src={cleaner.image} alt={cleaner.name} />
-                    <AvatarFallback>{cleaner.name.split(' ').map((n) => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="text-lg font-semibold">{cleaner.name}</h3>
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                      <span>{cleaner.rating}</span>
-                    </div>
+        <section className="container mx-auto px-4 py-16 md:py-24">
+          <h2 className="text-3xl md:text-4xl font-bold text-green-800 mb-12 text-center">Our Services</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {services.map((service, index) => (
+              <motion.div
+                key={service.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="bg-white rounded-2xl shadow-lg overflow-hidden group hover:shadow-xl transition-shadow"
+              >
+                <Link to={service.route} className="block p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    {React.createElement(service.icon, { className: "h-10 w-10 text-green-600" })}
+                    <ChevronRight className="h-6 w-6 text-green-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                </CardContent>
-              </Card>
+                  <h3 className="text-xl font-semibold text-green-800 mb-2">{service.name}</h3>
+                  <p className="text-gray-600">{service.description}</p>
+                </Link>
+              </motion.div>
             ))}
           </div>
         </section>
+
+        <section className="bg-green-800 text-white py-16 md:py-24">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Top Rated Cleaners</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {topCleaners.map((cleaner, index) => (
+                <motion.div
+                  key={cleaner.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="bg-green-700 rounded-2xl p-6 text-center"
+                >
+                  <img src={cleaner.image} alt={cleaner.name} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white" />
+                  <h3 className="text-xl font-semibold mb-2">{cleaner.name}</h3>
+                  <div className="flex items-center justify-center">
+                    <Star className="h-5 w-5 text-yellow-400 mr-1 fill-current" />
+                    <span className="font-medium">{cleaner.rating}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="container mx-auto px-4 py-16 md:py-24 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-green-800 mb-6">Ready for a Spotless Space?</h2>
+          <p className="text-xl text-gray-600 mb-12">Experience the EcoClean difference today!</p>
+          <Link to="/book" className="px-8 py-4 bg-green-600 text-white text-lg rounded-full hover:bg-green-700 transition-colors inline-block">
+            Book Your Cleaning
+          </Link>
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t bg-white/80 backdrop-blur-sm py-8">
-        <div className="container flex flex-col md:flex-row justify-between items-center px-4 md:px-6">
-          <p className="text-sm text-gray-500 mb-4 md:mb-0">© 2024 EcoClean. All rights reserved.</p>
-          <nav className="flex space-x-6 text-sm">
-            <Link to="/privacy" className="text-gray-500 hover:text-green-600 transition-colors">Privacy Policy</Link>
-            <Link to="/terms" className="text-gray-500 hover:text-green-600 transition-colors">Terms of Service</Link>
-            <Link to="/contact" className="text-gray-500 hover:text-green-600 transition-colors">Contact Us</Link>
-          </nav>
+      <footer className="bg-green-900 text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <Link to="/" className="flex items-center space-x-2 mb-4">
+                <Spray className="h-8 w-8 text-white" />
+                <span className="text-2xl font-bold">EcoClean</span>
+              </Link>
+              <p className="text-green-300">Redefining cleanliness, one space at a time.</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-2">
+                {['Home', 'Services', 'About', 'Contact'].map((item) => (
+                  <li key={item}>
+                    <Link to={`/${item.toLowerCase()}`} className="text-green-300 hover:text-white transition-colors">
+                      {item}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Services</h3>
+              <ul className="space-y-2">
+                {services.map((service) => (
+                  <li key={service.name}>
+                    <Link to={service.route} className="text-green-300 hover:text-white transition-colors">
+                      {service.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Connect With Us</h3>
+              <p className="text-green-300 mb-2">123 Clean Street, Green City, 12345</p>
+              <p className="text-green-300 mb-2">contact@ecoclean.com</p>
+              <p className="text-green-300">(123) 456-7890</p>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t border-green-700 text-center text-green-300">
+            <p>© 2024 EcoClean. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </div>
   );
 }
+
+
+
+
+
+
