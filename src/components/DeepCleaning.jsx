@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight } from 'lucide-react';
-
+import BackButton from '../components/ui/BackButton';
 function DeepCleaning() {
   const features = [
     "Thorough dusting and wiping of all surfaces",
@@ -14,6 +14,7 @@ function DeepCleaning() {
 
   return (
     <div className="bg-gradient-to-b from-blue-50 to-green-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+      <BackButton to="/residential" /> 
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl text-center mb-8">
           Deep <span className="text-blue-600">Cleaning</span> Service
@@ -33,7 +34,7 @@ function DeepCleaning() {
                 Our professional team uses advanced techniques and eco-friendly products to deliver a thorough, deep clean that will leave your home feeling refreshed and revitalized.
               </p>
               <Link
-                to="/DeepCleaning"
+                to="./DeepCleaning"
                 className="mt-8 bg-blue-600 border border-transparent rounded-md shadow px-5 py-3 inline-flex items-center text-base font-medium text-white hover:bg-blue-700 transition-colors duration-150"
               >
                 Book Deep Cleaning

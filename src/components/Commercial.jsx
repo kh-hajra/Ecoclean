@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, Warehouse, ShoppingCart, Hotel, School, Briefcase, ArrowRight } from 'lucide-react';
-
+import BackButton from '../components/ui/BackButton';
 const commercialServices = [
   {
     id: 'office-cleaning',
@@ -50,6 +50,7 @@ const commercialServices = [
 function CommercialCleaningListing() {
   return (
     <div className="bg-gradient-to-b from-gray-50 to-white py-16 sm:py-24 lg:py-32">
+       <BackButton to="/" /> 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl">
@@ -73,7 +74,7 @@ function CommercialCleaningListing() {
               </div>
               <p className="text-lg text-gray-700 mb-6">{service.description}</p>
               <Link
-                to={`/commercial-services/${service.id}`}
+                to={`/commercial/${service.id}`}
                 className="inline-flex items-center text-lg font-medium text-blue-600 hover:text-blue-500 transition-colors"
                 aria-label={`Learn more about ${service.title}`}
               >

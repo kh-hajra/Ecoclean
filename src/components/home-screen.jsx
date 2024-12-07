@@ -5,12 +5,14 @@ import { Link } from 'react-router-dom';
 import { SprayCanIcon as Spray, UtensilsCrossed, Sofa, Bed, Briefcase, ChevronRight, Star, Menu, X } from 'lucide-react';
 import placeholderImage from '../assets/images/placeholder.png';
 import '../styles/bubbles.css';
+import Header from '../components/ui/Header';
+import Footer from '../components/ui/Footer';
 const services = [
-  { name: 'Residential', icon: Spray, description: 'Sparkling clean homes', route: '/residential' },
+  { name: 'Outdoor', icon: Bed, description: 'Tidy community areas', route: '/outdoor' },
   { name: 'Commercial', icon: UtensilsCrossed, description: 'Pristine business spaces', route: '/commercial' },
   { name: 'Event', icon: Sofa, description: 'Immaculate event venues', route: '/event' },
-  { name: 'Society', icon: Bed, description: 'Tidy community areas', route: '/society' },
-  { name: 'Office', icon: Briefcase, description: 'Professional workspace cleaning', route: '/office' },
+  { name: 'Residential', icon: Spray, description: 'Sparkling clean homes', route: '/residential' },
+ 
 ];
 
 const topCleaners = [
@@ -55,54 +57,7 @@ export default function HomeScreen() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 ? 'bg-white shadow-md' : 'bg-transparent'}`}>
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link to="/" className="flex items-center space-x-2">
-            <Spray className="h-8 w-8 text-green-600" />
-            <span className="text-2xl font-bold text-green-800">EcoClean</span>
-          </Link>
-          <nav className="hidden md:flex space-x-8">
-            {['Home', 'Services', 'About', 'Contact'].map((item) => (
-              <Link key={item} to={`/${item.toLowerCase()}`} className="text-green-800 hover:text-green-600 transition-colors">
-                {item}
-              </Link>
-            ))}
-          </nav>
-          <div className="hidden md:flex space-x-4">
-            <Link to="/login" className="px-4 py-2 text-green-600 border border-green-600 rounded-full hover:bg-green-600 hover:text-white transition-colors">
-              Log In
-            </Link>
-            <Link to="/signup" className="px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors">
-              Sign Up
-            </Link>
-          </div>
-          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-        </div>
-        {isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="md:hidden bg-white shadow-lg rounded-b-2xl mx-4 mt-2"
-          >
-            <nav className="flex flex-col p-4 space-y-4">
-              {['Home', 'Services', 'About', 'Contact'].map((item) => (
-                <Link key={item} to={`/${item.toLowerCase()}`} className="text-green-800 hover:text-green-600 transition-colors">
-                  {item}
-                </Link>
-              ))}
-              <Link to="/login" className="px-4 py-2 text-center text-green-600 border border-green-600 rounded-full hover:bg-green-600 hover:text-white transition-colors">
-                Log In
-              </Link>
-              <Link to="/signup" className="px-4 py-2 text-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors">
-                Sign Up
-              </Link>
-            </nav>
-          </motion.div>
-        )}
-      </header>
+       <Header scrollY={scrollY} />
 
       <main className="pt-16">
         <section className="relative overflow-hidden bg-gradient-to-br from-pink-200 to-blue-200 py-16 md:py-24">
@@ -230,53 +185,7 @@ export default function HomeScreen() {
           </Link>
         </section>
       </main>
-
-      <footer className="bg-green-900 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <Link to="/" className="flex items-center space-x-2 mb-4">
-                <Spray className="h-8 w-8 text-white" />
-                <span className="text-2xl font-bold">EcoClean</span>
-              </Link>
-              <p className="text-green-300">Redefining cleanliness, one space at a time.</p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-2">
-                {['Home', 'Services', 'About', 'Contact'].map((item) => (
-                  <li key={item}>
-                    <Link to={`/${item.toLowerCase()}`} className="text-green-300 hover:text-white transition-colors">
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Services</h3>
-              <ul className="space-y-2">
-                {services.map((service) => (
-                  <li key={service.name}>
-                    <Link to={service.route} className="text-green-300 hover:text-white transition-colors">
-                      {service.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Connect With Us</h3>
-              <p className="text-green-300 mb-2">123 Clean Street, Green City, 12345</p>
-              <p className="text-green-300 mb-2">contact@ecoclean.com</p>
-              <p className="text-green-300">(123) 456-7890</p>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-green-700 text-center text-green-300">
-            <p>© 2024 EcoClean. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer services={services} />
     </div>
   );
 }

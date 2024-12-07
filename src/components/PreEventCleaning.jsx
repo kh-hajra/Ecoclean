@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Sparkles, Shield, Clock, Users } from 'lucide-react';
-
+import BackButton from '../components/ui/BackButton';
 function PreEventCleaning() {
   const services = [
     "Deep cleaning of the entire venue",
@@ -16,6 +16,7 @@ function PreEventCleaning() {
 
   return (
     <div className="bg-gradient-to-b from-blue-50 to-purple-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+       <BackButton to="/event" /> 
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl text-center mb-8">
           Pre-Event <span className="text-blue-600">Cleaning</span> Services
@@ -35,7 +36,7 @@ function PreEventCleaning() {
                 Our pre-event cleaning services ensure that your venue is spotless, sanitized, and ready to welcome your guests. We pay attention to every detail to create the perfect first impression for your event.
               </p>
               <Link
-                to="/ PreEventBooking"
+                to="./PreEventBooking"
                 className="mt-8 bg-blue-600 border border-transparent rounded-md shadow px-5 py-3 inline-flex items-center text-base font-medium text-white hover:bg-blue-700 transition-colors duration-150"
               >
                 Schedule Pre-Event Cleaning

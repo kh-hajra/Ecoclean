@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User, Phone, MapPin, FileText, Calendar, Plus, X, UserPlus, Menu } from 'lucide-react';
 import  Button  from "./ui/button"
-
+import logo from "../assets/images/logo.svg"
 const SignUpCleaner = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -92,7 +92,7 @@ const SignUpCleaner = () => {
                 <span className="sr-only">EcoClean</span>
                 <img
                   className="h-8 w-auto sm:h-10"
-                  src="/placeholder.svg?height=40&width=40"
+                  src={logo} // Correct File Reference
                   alt="EcoClean Logo"
                 />
                 <span className="ml-2 text-xl font-bold text-primary">EcoClean</span>
@@ -127,7 +127,11 @@ const SignUpCleaner = () => {
       <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg">
           <div>
-            <img className="mx-auto h-12 w-auto" src="/placeholder.svg?height=48&width=48" alt="EcoClean Logo" />
+          <img
+                  className="h-8 w-auto sm:h-10"
+                  src={logo} // Correct File Reference
+                  alt="EcoClean Logo"
+                />
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign up as a Cleaner</h2>
             <p className="mt-2 text-center text-sm text-gray-600">
               Join our eco-friendly cleaning community

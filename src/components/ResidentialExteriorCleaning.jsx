@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Truck, Recycle, Clock, Shield } from 'lucide-react';
-
+import BackButton from '../components/ui/BackButton';
 function StreetCleaning() {
   const services = [
     "Mechanical sweeping of streets and roads",
@@ -16,12 +16,13 @@ function StreetCleaning() {
 
   return (
     <div className="bg-gradient-to-b from-gray-50 to-white min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+       <BackButton to="/outdoor" /> 
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl text-center mb-8">
-          Street <span className="text-green-600">Cleaning</span> Services
+          Exterior <span className="text-green-600">Cleaning</span> Services
         </h1>
         <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto text-center mb-12">
-          Keep your community streets clean, safe, and beautiful with our professional street cleaning solutions.
+          Keep your community streets clean, safe, and beautiful with our professional  cleaning solutions.
         </p>
         
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden lg:grid lg:grid-cols-2 lg:gap-4">
@@ -32,13 +33,13 @@ function StreetCleaning() {
                 <span className="block text-green-600">happy communities</span>
               </h2>
               <p className="mt-4 text-lg leading-6 text-gray-500">
-                Our street cleaning services are designed to maintain the cleanliness and safety of your community's roads and public spaces. From regular sweeping to specialized cleaning, we ensure your streets stay in top condition year-round.
+                Our  cleaning services are designed to maintain the cleanliness and safety of your community's roads and public spaces. From regular sweeping to specialized cleaning, we ensure your streets stay in top condition year-round.
               </p>
               <Link
-                to="/ResidentialExteriorBooking"
+                to="./ResidentialExteriorBooking"
                 className="mt-8 bg-green-600 border border-transparent rounded-md shadow px-5 py-3 inline-flex items-center text-base font-medium text-white hover:bg-green-700 transition-colors duration-150"
               >
-                Schedule Street Cleaning
+                Schedule Exterior Cleaning
                 <ArrowRight className="ml-2 -mr-1 h-5 w-5" aria-hidden="true" />
               </Link>
             </div>

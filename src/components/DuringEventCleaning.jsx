@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Clock, Shield, Users, Sparkles } from 'lucide-react';
-
+import BackButton from '../components/ui/BackButton';
 function DuringEventCleaning() {
   const services = [
     "Continuous monitoring and cleaning of high-traffic areas",
@@ -16,6 +16,7 @@ function DuringEventCleaning() {
 
   return (
     <div className="bg-gradient-to-b from-yellow-50 to-orange-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+       <BackButton to="/event" /> 
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl text-center mb-8">
           During-Event <span className="text-yellow-600">Cleaning</span> Services
@@ -35,7 +36,7 @@ function DuringEventCleaning() {
                 Our during-event cleaning services ensure that your venue remains spotless and hygienic from start to finish. We work discreetly to maintain a clean environment without disrupting your guests or activities.
               </p>
               <Link
-                to="/DuringEventBooking"
+                to="./DuringEventBooking"
                 className="mt-8 bg-yellow-600 border border-transparent rounded-md shadow px-5 py-3 inline-flex items-center text-base font-medium text-white hover:bg-yellow-700 transition-colors duration-150"
               >
                 Schedule During-Event Cleaning

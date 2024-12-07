@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Coffee, Monitor, Users, Clock } from 'lucide-react';
-
+import BackButton from '../components/ui/BackButton';
 function OfficeCleaning() {
   const services = [
     "Daily janitorial services",
@@ -16,6 +16,7 @@ function OfficeCleaning() {
 
   return (
     <div className="bg-gradient-to-b from-blue-50 to-white min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+       <BackButton to="/commercial" /> 
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl text-center mb-8">
           Office <span className="text-blue-600">Cleaning</span> Services
@@ -35,10 +36,10 @@ function OfficeCleaning() {
                 Our professional office cleaning services ensure your workspace is always presentable, hygienic, and conducive to productivity. From daily maintenance to deep cleaning, we've got you covered.
               </p>
               <Link
-                to="/OfficeBooking"
+                to="./OfficeBooking"
                 className="mt-8 bg-blue-600 border border-transparent rounded-md shadow px-5 py-3 inline-flex items-center text-base font-medium text-white hover:bg-blue-700 transition-colors duration-150"
               >
-                Schedule a Consultation
+                Schedule a Booking
                 <ArrowRight className="ml-2 -mr-1 h-5 w-5" aria-hidden="true" />
               </Link>
             </div>

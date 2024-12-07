@@ -1,7 +1,7 @@
 import React from 'react';
 import BookingScreen from './BookingScreen';
 
-const CustomCleaningBooking = () => {
+const CustomBooking = () => {
   const serviceDetails = {
     title: 'Custom Cleaning',
     addons: [
@@ -16,4 +16,4 @@ const CustomCleaningBooking = () => {
   return <BookingScreen {...serviceDetails} />;
 };
 
-export default CustomCleaningBooking;
+export default CustomBooking;

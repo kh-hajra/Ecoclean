@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Trees, Building, Home, Truck, Umbrella, Droplets, ArrowRight } from 'lucide-react';
-
+import BackButton from '../components/ui/BackButton';
 const outdoorServices = [
   {
     id: 'street-cleaning',
@@ -24,32 +24,20 @@ const outdoorServices = [
     icon: Building,
     color: 'bg-green-100',
   },
+  
   {
-    id: 'park-cleaning',
-    title: 'Park and Recreation Area Cleaning',
-    description: 'Keep public spaces clean and inviting for community enjoyment.',
-    icon: Trees,
-    color: 'bg-yellow-100',
-  },
-  {
-    id: 'parking-lot-cleaning',
-    title: 'Parking Lot Cleaning',
-    description: 'Ensure a clean and safe parking environment for your customers and employees.',
+    id: 'garbage-collection',
+    title: 'Garbage Collection',
+    description: 'Efficient garbage collection and disposal service.',
     icon: Umbrella,
     color: 'bg-red-100',
-  },
-  {
-    id: 'pressure-washing',
-    title: 'Pressure Washing Services',
-    description: 'Remove tough stains and grime from various outdoor surfaces with our pressure washing expertise.',
-    icon: Droplets,
-    color: 'bg-purple-100',
   },
 ];
 
 function OutdoorCleaningListing() {
   return (
     <div className="bg-gradient-to-b from-green-50 to-blue-50 py-16 sm:py-24 lg:py-32">
+       <BackButton to="/" /> 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl">
@@ -73,7 +61,7 @@ function OutdoorCleaningListing() {
               </div>
               <p className="text-lg text-gray-700 mb-6">{service.description}</p>
               <Link
-                to={`/outdoor-services/${service.id}`}
+                to={`/outdoor/${service.id}`}
                 className="inline-flex items-center text-lg font-medium text-green-600 hover:text-green-500 transition-colors"
                 aria-label={`Learn more about ${service.title}`}
               >

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight, HardHat, Zap, Recycle, Shield } from 'lucide-react';
-
+import BackButton from '../components/ui/BackButton';
 function IndustrialCleaning() {
   const services = [
     "Heavy-duty floor cleaning and maintenance",
@@ -16,6 +16,7 @@ function IndustrialCleaning() {
 
   return (
     <div className="bg-gradient-to-b from-gray-100 to-white min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+       <BackButton to="/commercial" /> 
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl text-center mb-8">
           Industrial <span className="text-gray-600">Cleaning</span> Services
@@ -35,7 +36,7 @@ function IndustrialCleaning() {
                 Our industrial cleaning services are designed to tackle the toughest cleaning challenges while ensuring the safety and efficiency of your operations. From heavy machinery to expansive warehouse floors, we've got you covered.
               </p>
               <Link
-                to="/IndustrialCleaning"
+                to="./IndustrialBooking"
                 className="mt-8 bg-gray-600 border border-transparent rounded-md shadow px-5 py-3 inline-flex items-center text-base font-medium text-white hover:bg-gray-700 transition-colors duration-150"
               >
                 Request a Quote

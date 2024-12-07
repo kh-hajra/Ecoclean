@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Sliders, CheckSquare, Clock, ArrowRight } from 'lucide-react';
-
+import BackButton from '../components/ui/BackButton';
 function CustomCleaning() {
   const customOptions = [
     "Choose specific rooms or areas",
@@ -15,6 +15,7 @@ function CustomCleaning() {
   return (
     
     <div className="bg-gradient-to-b from-yellow-50 to-orange-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+      <BackButton to="/residential" /> 
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl text-center mb-8">
           Custom <span className="text-orange-600">Cleaning</span> Service
@@ -34,7 +35,7 @@ function CustomCleaning() {
                 Our custom cleaning service puts you in control. Tell us exactly what you need, and we'll create a cleaning plan that's perfect for your home and lifestyle.
               </p>
               <Link
-                to="/CustomCleaning"
+                to="./CustomBooking"
                 className="mt-8 bg-orange-600 border border-transparent rounded-md shadow px-5 py-3 inline-flex items-center text-base font-medium text-white hover:bg-orange-700 transition-colors duration-150"
               >
                 Create Your Custom Plan

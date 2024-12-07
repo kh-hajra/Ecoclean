@@ -5,7 +5,7 @@ import  Button  from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Checkbox } from "./ui/checkbox"
-
+import logo from '../assets/images/logo.svg';
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -33,7 +33,7 @@ const Login = () => {
                 <span className="sr-only">EcoClean</span>
                 <img
                   className="h-8 w-auto sm:h-10"
-                  src="/placeholder.svg?height=40&width=40"
+                  src={logo} // Correct File Reference
                   alt="EcoClean Logo"
                 />
                 <span className="ml-2 text-xl font-bold text-primary">EcoClean</span>
@@ -68,7 +68,11 @@ const Login = () => {
       <div className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8 bg-card p-8 rounded-xl shadow-lg">
           <div>
-            <img className="mx-auto h-12 w-auto" src="/placeholder.svg?height=48&width=48" alt="EcoClean Logo" />
+          <img
+                  className="h-8 w-auto sm:h-10"
+                  src={logo} // Correct File Reference
+                  alt="EcoClean Logo"
+                />
             <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">Sign in to your account</h2>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Home } from 'lucide-react';
-
+import BackButton from '../components/ui/BackButton';
 function MoveInMoveOutCleaning() {
   const services = [
     "Deep cleaning of all rooms",
@@ -14,6 +14,7 @@ function MoveInMoveOutCleaning() {
 
   return (
     <div className="bg-gradient-to-b from-purple-50 to-pink-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+       <BackButton to="/commercial" /> 
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl text-center mb-8">
           Move-In / Move-Out <span className="text-purple-600">Cleaning</span>

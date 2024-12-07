@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link,Outlet } from 'react-router-dom';
 import { Calendar, Sparkles, Trash2, Clock, Users, ArrowRight } from 'lucide-react';
-
+import BackButton from '../components/ui/BackButton';
 const eventCleaningServices = [
   {
     id: 'pre-event-cleaning',
@@ -29,6 +29,7 @@ const eventCleaningServices = [
 function EventCleaningListing() {
   return (
     <div className="bg-gradient-to-b from-purple-50 to-pink-50 py-16 sm:py-24 lg:py-32">
+       <BackButton to="/" /> 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl">

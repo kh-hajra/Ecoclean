@@ -1,0 +1,252 @@
+/* General Container */
+.about-us-container {
+    font-family: 'Arial', sans-serif;
+    color: #333;
+  }
+  
+ .hero-section {
+  position: relative;
+  background: linear-gradient(180deg, rgba(76, 175, 80, 1) 0%, rgba(129, 196, 132, 1) 100%);
+  height: 300px; /* Adjust height as per your need */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.hero-section::before,
+.hero-section::after {
+  content: '';
+  position: absolute;
+  width: 200%;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+}
+
+.hero-section::before {
+  bottom: -50px;
+  left: -20%;
+  transform: rotate(5deg);
+}
+
+.hero-section::after {
+  bottom: -100px;
+  left: -30%;
+  transform: rotate(-10deg);
+}
+
+.hero-text {
+  z-index: 2; /* Ensures the text stays above the waves */
+  color: white;
+  font-size: 36px;
+  font-weight: bold;
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+.confetti {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    background-color: #ff0;
+    border-radius: 50%;
+    animation: confetti 2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1000;
+  }
+  
+  .confetti:nth-child(1) {
+    animation-duration: 3s;
+    animation-delay: 0s;
+    left: 10%;
+  }
+  
+  .confetti:nth-child(2) {
+    animation-duration: 2.5s;
+    animation-delay: 1s;
+    left: 30%;
+  }
+  
+  .confetti:nth-child(3) {
+    animation-duration: 3s;
+    animation-delay: 0.5s;
+    left: 50%;
+  }
+  
+  .confetti:nth-child(4) {
+    animation-duration: 3s;
+    animation-delay: 1.5s;
+    left: 70%;
+  }
+  
+  .confetti:nth-child(5) {
+    animation-duration: 2.5s;
+    animation-delay: 2s;
+    left: 90%;
+  }
+  /* Slogan Below Main Heading */
+  .hero-slogan {
+    font-size: 24px;
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.5;
+    color: white;
+    opacity: 0.8; /* Slight transparency for the slogan */
+    margin-top: 10px;
+  }
+  
+  /* Background Animation for Hero Section */
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    animation: moving-background 10s linear infinite;
+    filter: blur(10px);
+    z-index: -1;
+  }
+  
+  /* Keyframe Animation for Background Movement */
+  @keyframes moving-background {
+    0% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(50%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+  /* Team Section */
+  .team-section {
+    padding: 40px 20px;
+    background: #fff;
+    text-align: center;
+  }
+  
+  .section-heading {
+    font-size: 32px;
+    color: #4caf50;
+    margin-bottom: 10px;
+  }
+  
+  .section-subheading {
+    font-size: 18px;
+    color: #777;
+    margin-bottom: 20px;
+  }
+  
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+  
+  .team-member {
+    text-align: center;
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .member-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+  }
+  
+  .member-name {
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  .member-role {
+    font-size: 16px;
+    color: #666;
+  }
+  
+  /* About Section */
+  .about-section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    background: #f1f8e9;
+  }
+  
+  .about-content {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    gap: 20px;
+  }
+  
+  .about-text {
+    flex: 1;
+    min-width: 300px;
+  }
+  
+  .about-text p {
+    font-size: 18px;
+    color: #555;
+    line-height: 1.6;
+  }
+  
+  .about-image {
+    flex: 1;
+    min-width: 300px;
+    text-align: center;
+  }
+  
+  .illustration-img {
+    width: 300px;  /* Set a specific width */
+    height: auto;  /* Height adjusts automatically */
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: block;
+    margin: 0 auto;
+  }
+  
+  /* Philosophy Section */
+  .philosophy-section {
+    padding: 40px 20px;
+    background: #fff;
+    text-align: center;
+  }
+  
+  .philosophy-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  
+  .philosophy-img {
+    width: 550px;
+    height: auto;
+    margin-right: 20px;
+  }
+  
+  .philosophy-text {
+    flex: 1;
+    min-width: 300px;
+  }
+  
+  .philosophy-text p {
+    font-size: 18px;
+    font-style: italic;
+    color: #555;
+    line-height: 1.6;
+  }
+  
