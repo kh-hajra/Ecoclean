@@ -1,24 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, LogIn, ArrowLeft } from 'lucide-react';
-import  Button  from "./ui/button"
-import { Input } from "./ui/input"
-import { Label } from "./ui/label"
-import { Checkbox } from "./ui/checkbox"
+import Button from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Checkbox } from "./ui/checkbox";
 import logo from '../assets/images/logo.svg';
-const Login = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const navigate = useNavigate();
+import useLogin from '../hooks/useLogin';
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Login attempt with:', { email, password });
-    // Here you would typically handle authentication
-    // For now, we'll just navigate to the home page
-    navigate('/home');
-  };
+const Login = () => {
+  const navigate = useNavigate();
+  const { register, handleSubmit, errors, onSubmit, loginError, showError, setShowError } = useLogin();
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10 flex flex-col">
@@ -30,12 +23,7 @@ const Login = () => {
                 <ArrowLeft className="h-6 w-6" />
               </Button>
               <Link to="/" className="flex items-center">
-                <span className="sr-only">EcoClean</span>
-                <img
-                  className="h-8 w-auto sm:h-10"
-                  src={logo} // Correct File Reference
-                  alt="EcoClean Logo"
-                />
+                <img className="h-8 w-auto sm:h-10" src={logo} alt="EcoClean Logo" />
                 <span className="ml-2 text-xl font-bold text-primary">EcoClean</span>
               </Link>
             </div>
@@ -57,7 +45,7 @@ const Login = () => {
               <Link to="/signup" className="whitespace-nowrap text-base font-medium text-muted-foreground hover:text-primary">
                 Sign up
               </Link>
-              <Button className="group relative  flex justify-center py-2 px-4 mx-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" onClick={() => navigate('/signup-cleaner')}>
+              <Button className="mx-2" onClick={() => navigate('/signup-cleaner')}>
                 Sign up as Cleaner
               </Button>
             </div>
@@ -68,14 +56,10 @@ const Login = () => {
       <div className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8 bg-card p-8 rounded-xl shadow-lg">
           <div>
-          <img
-                  className="h-8 w-auto sm:h-10"
-                  src={logo} // Correct File Reference
-                  alt="EcoClean Logo"
-                />
+            <img className="h-8 w-auto sm:h-10" src={logo} alt="EcoClean Logo" />
             <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">Sign in to your account</h2>
           </div>
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="email-address">Email address</Label>
@@ -86,12 +70,11 @@ const Login = () => {
                     name="email"
                     type="email"
                     autoComplete="email"
-                    required
                     className="pl-10"
                     placeholder="Email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    {...register("email")}
                   />
+                  {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
                 </div>
               </div>
               <div>
@@ -99,52 +82,57 @@ const Login = () => {
                 <div className="mt-1 relative">
                   <Lock className="absolute top-3 left-3 h-5 w-5 text-muted-foreground" aria-hidden="true" />
                   <Input
+                
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
-                    required
                     className="pl-10"
                     placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    {...register("password")}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-primary focus:outline-none"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-primary"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
+                  {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Checkbox id="remember-me" />
-                <Label htmlFor="remember-me" className="ml-2 text-sm text-muted-foreground">
-                  Remember me
-                </Label>
-              </div>
-
-              <div className="text-sm">
-                <Link to="/forgot-password" className="font-medium text-primary hover:text-primary/80">
-                  Forgot your password?
-                </Link>
-              </div>
+              <Checkbox id="remember-me" />
+              <Label htmlFor="remember-me" className="ml-2 text-sm text-muted-foreground">
+                Remember me
+              </Label>
+              <Link to="/forgot-password" className="text-sm font-medium text-primary hover:text-primary/80">
+                Forgot your password?
+              </Link>
             </div>
 
+            {loginError && showError && (
+              <div className="text-red-500 text-sm mt-2">
+                {loginError}
+                <button
+                  type="button"
+                  className="ml-2 text-primary hover:underline"
+                  onClick={() => setShowError(false)}
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
             <div className="flex justify-center">
-  <Button
-    type="submit"
-    className="group relative w-full flex justify-center py-2 px-4 mx-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-  >
-    <LogIn className="h-5 w-5 mr-2" aria-hidden="true" />
-    Sign in
-  </Button>
-</div>
+              <Button type="submit" className="w-full">
+                <LogIn className="h-5 w-5 mr-2" />
+                Sign in
+              </Button>
+            </div>
           </form>
         </div>
       </div>
@@ -153,4 +141,3 @@ const Login = () => {
 };
 
 export default Login;
-

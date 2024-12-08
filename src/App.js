@@ -54,8 +54,10 @@ import Login from './components/login';
 import SignUp from './components/signup';
 import SignUpCleaner from './components/CleanerSignup';
 import Contact from './components/Contact';
+import { Providers } from './store/Providers';
 function App() {
   return (
+
     <Router>
       <Routes>
     <Route path="/" element={<HomeScreen />} />
@@ -126,6 +128,7 @@ function App() {
 
       </Routes>
     </Router>
+
   );
 }
 

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-
+import { User } from 'lucide-react'
 import {  Menu, X } from 'lucide-react';
 import logo from '../../assets/images/logo.svg'; // Correct Import
+import { useSelector } from 'react-redux';
 const Header = ({ scrollY }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+  const user = useSelector((state) => state.user.user);  // Assuming user data is stored under 'auth.user'
+  console.log(user,"user is");
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -33,7 +35,7 @@ const Header = ({ scrollY }) => {
             </Link>
           ))}
         </nav>
-        <div className="hidden md:flex space-x-4">
+        {user===null?<div className="hidden md:flex space-x-4">
           <Link
             to="/login"
             className="px-4 py-2 text-green-600 border border-green-600 rounded-full hover:bg-green-600 hover:text-white transition-colors"
@@ -46,7 +48,19 @@ const Header = ({ scrollY }) => {
           >
             Sign Up
           </Link>
-        </div>
+        </div>: <div className="flex items-center space-x-4">
+          <div className="bg-white rounded-full p-2">
+            <User className="text-purple-500 h-6 w-6" />
+          </div>
+          <div className="text-green-500 font-semibold">
+            Welcome,{' '}
+            <span >
+              {user.
+username
+}
+            </span>
+          </div></div>}
+        
         <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
           {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
