@@ -7,6 +7,9 @@ import { Label } from "./ui/label";
 import logo from "../assets/images/logo.svg";
 import useSignup from "../hooks/useSignup";
 
+
+import { GoogleLogin } from "@react-oauth/google"; // Import Google Login component
+import axios from "axios"; // For sending requests to the backend
 const SignUp = () => {
   const navigate = useNavigate();
 
@@ -20,10 +23,20 @@ const SignUp = () => {
     setShowError,
     isValid,
     successMessage,
+    handleGoogleSignup,
   } = useSignup();
 
   const [showPassword, setShowPassword] = useState(false);
+  
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const token = credentialResponse.credential; // Token from Google
+    console.log("Google Token:", token); 
+    await handleGoogleSignup(token); // Use the function from useSignup
+  };
 
+  const handleGoogleError = () => {
+    console.error("Google Login Failed");
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10 flex flex-col">
       <header className="bg-background shadow-sm">
@@ -120,7 +133,7 @@ const SignUp = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-primary"
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
                   </button>
                   {errors.password && (
                     <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
@@ -143,6 +156,14 @@ const SignUp = () => {
                 <UserPlus className="h-5 w-5 mr-2" />
                 Sign up
               </Button>
+              <div className="mt-4">
+              <GoogleLogin
+    onSuccess={handleGoogleSuccess}
+    onError={handleGoogleError}
+    
+    text="signup_with" // Updated to display "Sign up with Google"
+  />
+              </div>
             </div>
           </form>
         </div>

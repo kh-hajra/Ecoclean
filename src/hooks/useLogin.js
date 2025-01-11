@@ -60,8 +60,7 @@ const useLogin = (initialValues) => {
       const response = await login({identifier:data.email,password:data.password});
 
     toast.success("User logged in successfully")
-
-
+   
       dispatch(
         setUser({
           accessToken: response?.data?.data?.accessToken,
@@ -70,7 +69,7 @@ const useLogin = (initialValues) => {
       );
 
  
-
+     
     //   await signIn("credentials", {
     //     token: response?.data?.data?.accessToken,
     //     redirect: false,

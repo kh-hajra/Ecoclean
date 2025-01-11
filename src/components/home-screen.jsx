@@ -7,6 +7,8 @@ import placeholderImage from '../assets/images/placeholder.png';
 import '../styles/bubbles.css';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
+import Spline from '@splinetool/react-spline';
+
 const services = [
   { name: 'Outdoor', icon: Bed, description: 'Tidy community areas', route: '/outdoor' },
   { name: 'Commercial', icon: UtensilsCrossed, description: 'Pristine business spaces', route: '/commercial' },
@@ -64,16 +66,9 @@ export default function HomeScreen() {
           <div className="absolute inset-0">
             <div className="absolute inset-0 bg-gradient-to-r from-pink-200 via-green-200 to-blue-200 animate-gradient-x"></div>
             <div className="absolute inset-0 opacity-50">
-              <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="grain" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="rgba(255,255,255,0.1)" />
-                    <stop offset="20%" stopColor="rgba(255,255,255,0)" />
-                    <stop offset="50%" stopColor="rgba(255,255,255,0.1)" />
-                    <stop offset="70%" stopColor="rgba(255,255,255,0)" />
-                    <stop offset="100%" stopColor="rgba(255,255,255,0.1)" />
-                  </linearGradient>
-                </defs>
+               <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                
+               
                 <path fill="url(#grain)" d="M0 0 L100 0 L100 100 L0 100 Z" />
               </svg>
             </div>

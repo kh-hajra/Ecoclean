@@ -3,7 +3,7 @@ import { configureStore, combineReducers } from "@reduxjs/toolkit";
 
 import auth from "../store/reducers/auth/index.js";
 import user from "../store/reducers/user/index.js";
-
+import cleaner from "../store/reducers/cleaner/index.js";
 // Create a noop storage for SSR
 
 
@@ -12,6 +12,7 @@ import user from "../store/reducers/user/index.js";
 const rootReducer = combineReducers({
   auth,
   user,
+  cleaner,
   // Add other reducers here
 });
 

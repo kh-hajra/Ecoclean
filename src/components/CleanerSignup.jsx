@@ -4,8 +4,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User, Phone, MapPin, FileText, Calendar, Plus, X, UserPlus, Menu } from 'lucide-react';
 import  Button  from "./ui/button"
 import logo from "../assets/images/logo.svg"
+import { registerCleaner } from '../store/actions/auth/index.js';
+import { useDispatch } from 'react-redux';
 const SignUpCleaner = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -15,14 +19,25 @@ const SignUpCleaner = () => {
     phoneNumber: '',
     experience: '',
     location: '',
+    verificationDocument: null // Add this for file upload
   });
+  
   const [availabilities, setAvailabilities] = useState([]);
-  const [newAvailability, setNewAvailability] = useState({ day: 'Monday', start: '', end: '' });
+  const [newAvailability, setNewAvailability] = useState({ 
+    day: 'Monday', 
+    start: '', 
+    end: '' 
+  });
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, files } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: files ? files[0] : value
+    }));
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
@@ -41,30 +56,46 @@ const SignUpCleaner = () => {
     if (!formData.experience.trim()) newErrors.experience = 'Experience details are required';
     if (!formData.location.trim()) newErrors.location = 'Location is required';
     if (availabilities.length === 0) newErrors.availabilities = 'At least one availability slot is required';
+    if (!formData.verificationDocument) newErrors.verificationDocument = 'Verification document is required';
+    
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formErrors = validateForm();
+    
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
     }
-    // Here you would typically send the data to your backend
-    console.log('Sign up as cleaner attempt with:', { ...formData, availabilities });
-    // Reset form after successful submission
-    setFormData({
-      fullName: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      phoneNumber: '',
-      experience: '',
-      location: '',
-    });
-    setAvailabilities([]);
-    setNewAvailability({ day: 'Monday', start: '', end: '' });
+
+    setIsLoading(true);
+    try {
+      // Dispatch registration action with form data
+      const result = await dispatch(registerCleaner({
+        ...formData,
+        availabilities: availabilities.map(a => ({
+          day: a.day,
+          start: a.start,
+          end: a.end
+        }))
+      })).unwrap();
+
+      // Handle successful registration
+      navigate('/dashboard', { 
+        state: { 
+          message: 'Registration successful. Awaiting admin approval.' 
+        } 
+      });
+    } catch (error) {
+      // Handle registration error
+      setErrors({ 
+        submit: error.message || 'Registration failed. Please try again.' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const addAvailability = () => {
@@ -137,6 +168,11 @@ const SignUpCleaner = () => {
               Join our eco-friendly cleaning community
             </p>
           </div>
+          {errors.submit && (
+            <div className="text-red-600 text-center mb-4">
+              {errors.submit}
+            </div>
+          )}
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
@@ -338,33 +374,48 @@ const SignUpCleaner = () => {
             </div>
 
             <div>
-              <label htmlFor="verification" className="block text-sm font-medium text-gray-700 mb-2">
-                Verification Documents
+              <label htmlFor="verification" className="block text-sm font-medium text-gray-700">
+                Verification Document
               </label>
               <input
                 type="file"
                 id="verification"
-                name="verification"
+                name="verificationDocument"
                 accept=".pdf,.jpg,.jpeg,.png"
-                className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                onChange={handleChange}
+                className={`appearance-none block w-full px-3 py-2 border ${
+                  errors.verificationDocument 
+                    ? 'border-red-300' 
+                    : 'border-gray-300'
+                } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm`}
               />
+              {errors.verificationDocument && (
+                <p className="mt-2 text-sm text-red-600">
+                  {errors.verificationDocument}
+                </p>
+              )}
             </div>
 
             <div>
               <button
                 type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out"
+                disabled={isLoading}
+                className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                  isLoading 
+                    ? 'bg-green-400 cursor-not-allowed' 
+                    : 'bg-green-600 hover:bg-green-700'
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out`}
               >
-                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                  <UserPlus className="h-5 w-5 text-green-500 group-hover:text-green-400" aria-hidden="true" />
-                </span>
-                Sign up as Cleaner
+                {isLoading ? 'Registering...' : 'Sign up as Cleaner'}
               </button>
             </div>
           </form>
 
           <div className="text-sm text-center">
-            <a href="/login" className="font-medium text-green-600 hover:text-green-500 transition duration-150 ease-in-out">
+            <a 
+              href="/login" 
+              className="font-medium text-green-600 hover:text-green-500 transition duration-150 ease-in-out"
+            >
               Already have an account? Sign in
             </a>
           </div>

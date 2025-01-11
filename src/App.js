@@ -27,13 +27,14 @@ import OfficeBooking from './components/OfficeBooking';
 import IndustrialCleaning from './components/IndustrialCleaning';
 import IndustrialBooking from './components/IndustrialBooking';
 import RetailCleaning from './components/retail-cleaning';
-
+import Dashboard from './components/Cleanerdash';
 import HospitalityCleaning from './components/hospitality-cleaning';
 
 import EducationalFacilityCleaning from './components/educational-facility-cleaning';
 
 import CommercialSpecialtyCleaning from './components/commercial-specialty-cleaning';
-
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 // Outdoor Cleaning Pages
 import StreetCleaning from './components/StreetCleaning';
 import StreetBooking from './components/StreetBooking';
@@ -67,6 +68,9 @@ function App() {
      <Route path="/About" element={<AboutUs/>}/>
      <Route path="/Contact" element={<Contact/>}/>
      <Route path="/Payment" element={<Payment/>}/>
+     <Route path="/dashboard" element={<Dashboard/>}/>
+     <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
       {/* Routes for individual service pages */}
       <Route path="/residential/custom-cleaning" element={<CustomCleaning />} />
       <Route path="/residential/standard-cleaning" element={<StandardCleaning />} />

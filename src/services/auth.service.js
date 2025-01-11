@@ -1,6 +1,7 @@
 import { httpService } from "../middleware";
 import { header } from "framer-motion/client";
 import { headers } from "next/headers";
+import axios from 'axios';
 
 const apiVersion = "v1";
 
@@ -16,29 +17,109 @@ async function getClientIP() {
   }
 }
 
-const login = async (body) =>
-  httpService.post("/users/login", body, {
-   
-  });
+const login = async (body) => {
+  const response = await httpService.post("/users/login", body);
+  return response; // Ensure the backend includes the role in this response
+};
 
+  const logout = async () => {
+    try {
+      const response = await httpService.post('/users/logout');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+
+
+
+  
 const loginSSO = (body) =>
   httpService.post("/login/sso", body);
+// URL for your backend API
+const API_URL = 'http://localhost:8080/api/v1/users';
 
+// Google Signup Service
+// Google signup
+const signupWithGoogle = async (token) => {
+  try {
+    const response = await httpService.post("/users/googleSignup", { token });
+
+    // Log the full response for debugging
+    console.log("Service Full Response:", response);
+
+    // Return the full response object as-is
+    return response;
+  } catch (error) {
+    console.error("SignupWithGoogle Service Error:", error);
+    throw error;
+  }
+};
 const walletSeen = () =>
   httpService.post("/user/wallet-seen");
 
 const canvasSsoLogin = (body) =>
   httpService.post("/login/lti-sso", body);
 
-const loginWithGoogle = async (body) =>
-  httpService.post("/auth/google-login", body, {
-    headers: {
-      "x-client-ip": await getClientIP(),
+const loginWithGoogle = async (tokenId) => {
+  if (!tokenId) {
+    console.error("Token ID is missing in googleLoginService.");
+    return null; // Add proper error handling
+  }
 
-      // Get the device name (using userAgent)
-      "x-client-device": navigator.userAgent,
-    },
-  });
+  try {
+    const response = await httpService.post("/users/google-login", { tokenId });
+    console.log("Google Login Service Response:", response);
+    return response?.data; // Backend response (e.g., tokens, user data, etc.)
+  } catch (error) {
+    console.error("Google Login Service Error:", error.response || error);
+    throw error;
+  }
+};
+
+
+  // Cleaner Registration Service
+  export const cleanerService = {
+    registerCleaner: async (cleanerData) => {
+      const formData = new FormData();
+      
+      // Append form fields
+      Object.keys(cleanerData).forEach(key => {
+        if (key === 'availabilities') {
+          formData.append(key, JSON.stringify(cleanerData[key]));
+        } else if (key !== 'verificationDocument') {
+          formData.append(key, cleanerData[key]);
+        }
+      });
+  
+      // Append verification document
+      if (cleanerData.verificationDocument) {
+        formData.append('verificationDocument', cleanerData.verificationDocument);
+      }
+  
+      try {
+        const response = await axios.post(`${API_URL}/registerCleaner`, formData, {
+          headers: { 
+            'Content-Type': 'multipart/form-data' 
+          }
+        });
+        
+        // Save token to local storage
+        if (response.data.data.token) {
+          localStorage.setItem('cleanerToken', response.data.data.token);
+        }
+        
+        return response.data;
+      } catch (error) {
+        throw error.response ? error.response.data : new Error('Registration failed');
+      }
+    }
+  };;
+
+// Add this export
+
+   
 
 const register = (body) =>
   httpService.post("/users/register", body);
@@ -47,10 +128,10 @@ const confirmEmail = (body) =>
   httpService.post("/verify-email", body);
 
 const forgotPassword = (body) =>
-  httpService.post("/users/forgot-password", body);
+  httpService.post("/users/forgotPassword", body);
 
 const resetForgotPassword = (body) =>
-  httpService.post("/users/reset-password", { newPassword: body.newPassword });
+  httpService.post("/users/resetForgotPassword", { newPassword: body.newPassword });
 
 const verifyOTP = (body) =>
   httpService.post("auth/verify-otp", body);
@@ -70,9 +151,12 @@ const resendOTP = (body) =>
 
 export {
   login,
+  logout,
   loginSSO,
+  signupWithGoogle,
   canvasSsoLogin,
   loginWithGoogle,
+  
   register,
   confirmEmail,
   forgotPassword,

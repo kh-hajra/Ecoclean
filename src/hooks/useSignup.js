@@ -1,77 +1,97 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { registerUser } from "../store/actions/auth";
-
-
+import { registerUser, googleSignupUser } from "../store/actions/auth/index.js"; // Assuming googleSignupUser is correctly defined
 import { toast } from "react-toastify";
 import { signupSchema } from "../validationSchem";
 
 const useSignup = (initialValues) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // State for error, loading, and success handling
   const [successMessage, setSuccessMessage] = useState();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
+  // Redux state selectors
+  const signupSuccess = useSelector((state) => state?.auth?.signupSuccess); // Updated key names for clarity
+  const signupError = useSelector((state) => state?.auth?.signupError);
 
-  // Redux selectors to get signup state and error
-  const signupSucess = useSelector((state) => state?.auth?.signUpSucess);
-  const signUpError = useSelector((state) => state?.auth?.signUpError);
-
-  // State to handle error visibility
+  // State to control error visibility
   const [showError, setShowError] = useState(false);
 
+  // Show error if signupError changes
   useEffect(() => {
-    setShowError(true);
-  }, [signUpError]);
+    if (signupError) {
+      setShowError(true);
+    }
+  }, [signupError]);
 
-  // Setting up react-hook-form with default values and validation schema
+  // Form setup with react-hook-form and yup schema
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isValid },
   } = useForm({
     resolver: yupResolver(signupSchema),
-    defaultValues: initialValues || { email: "", password: "", name: "" }, // Initialize form with default values
-    mode: "onChange", // Enable real-time validation as user types
+    defaultValues: initialValues || { email: "", password: "", name: "" },
+    mode: "onChange",
   });
 
-  // Form submit handler to dispatch register action
-  const onSubmit = async (data)  =>  {
-   
-   try{
-   const res= await dispatch(registerUser(data));
-   toast.success("User registered successfully")
-   navigate('/login')
-   }catch(error){
-
-   }
-    
-    
+  // Form submit handler
+  const onSubmit = async (data) => {
+    try {
+      setLoading(true); // Added loading state here
+      const res = await dispatch(registerUser(data));
+      toast.success("User registered successfully!");
+      setSuccessMessage("Registration successful.");
+      navigate("/login");
+    } catch (err) {
+      toast.error("User registration failed.");
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false); // Ensure loading state is cleared
+    }
   };
 
-  // Redirect to verification page on successful signup
-  useEffect(() => {
-    if (signupSucess) {
-      navigate("/verifyOtp");
-      setSuccessMessage("Registration Succeeded");
+  // Google signup handler
+  const handleGoogleSignup = async (token) => {
+    try {
+      setLoading(true);
+      const res = await dispatch(googleSignupUser(token));
+      toast.success("Google Signup successful!");
+      setSuccessMessage("Google Signup successful.");
+      navigate("/"); // Navigate to the appropriate page on success
+    } catch (err) {
+      toast.error(err.message || "Google Signup failed. Please try again.");
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
-  }, [signupSucess]);
+  };
+
+  // Redirect on successful registration or Google signup
+  useEffect(() => {
+    if (signupSuccess) {
+      navigate("/verifyOtp");
+    }
+  }, [signupSuccess, navigate]);
 
   return {
     register,
     handleSubmit,
+    handleGoogleSignup, // Added as part of the return object
     errors,
+    loading,
     onSubmit,
-    signUpError,
+    signupError,
     showError,
     setShowError,
     isValid,
     successMessage,
-
-
   };
 };
 

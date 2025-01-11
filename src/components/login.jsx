@@ -97,7 +97,7 @@ const Login = () => {
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-primary"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
                   </button>
                   {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
                 </div>
@@ -105,10 +105,11 @@ const Login = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              <Checkbox id="remember-me" />
-              <Label htmlFor="remember-me" className="ml-2 text-sm text-muted-foreground">
+              {/* <Checkbox id="remember-me" /> */}
+              {/* <Label htmlFor="remember-me" className="ml-2 text-sm text-muted-foreground">
                 Remember me
-              </Label>
+              </Label> */}
+             
               <Link to="/forgot-password" className="text-sm font-medium text-primary hover:text-primary/80">
                 Forgot your password?
               </Link>
