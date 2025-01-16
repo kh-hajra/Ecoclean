@@ -14,6 +14,7 @@ import {
   SIGNUP_REQUEST,
   SIGNUP_FAIL,
   SIGNUP_SUCCESS,
+
   FORGOT_PASSWORD_VERIFY_OTP_REQUEST_AUTH,
   WALLET_SEEN_REQUEST,
 } from "../../actionTypes";
@@ -148,6 +149,7 @@ export const registerCleaner = createAsyncThunk(
   async (cleanerData, { rejectWithValue }) => {
     try {
       const response = await cleanerService.registerCleaner(cleanerData);
+      console.log(response.data)
       return response.data;
     } catch (error) {
       return rejectWithValue(error.message);

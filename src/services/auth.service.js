@@ -78,45 +78,40 @@ const loginWithGoogle = async (tokenId) => {
   }
 };
 
-
-  // Cleaner Registration Service
-  export const cleanerService = {
-    registerCleaner: async (cleanerData) => {
-      const formData = new FormData();
-      
-      // Append form fields
-      Object.keys(cleanerData).forEach(key => {
-        if (key === 'availabilities') {
-          formData.append(key, JSON.stringify(cleanerData[key]));
-        } else if (key !== 'verificationDocument') {
-          formData.append(key, cleanerData[key]);
-        }
-      });
-  
-      // Append verification document
-      if (cleanerData.verificationDocument) {
-        formData.append('verificationDocument', cleanerData.verificationDocument);
+export const cleanerService = {
+  registerCleaner: async (formData) => {
+    try {
+      // Log the received FormData entries
+      console.log('Received in service:');
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
       }
-  
-      try {
-        const response = await axios.post(`${API_URL}/registerCleaner`, formData, {
-          headers: { 
-            'Content-Type': 'multipart/form-data' 
+
+      const response = await axios.post(
+        `${API_URL}/registerCleaner`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
           }
-        });
-        
-        // Save token to local storage
-        if (response.data.data.token) {
-          localStorage.setItem('cleanerToken', response.data.data.token);
         }
-        
-        return response.data;
-      } catch (error) {
-        throw error.response ? error.response.data : new Error('Registration failed');
-      }
-    }
-  };;
+      );
 
+      if (response.data.data.token) {
+        localStorage.setItem('cleanerToken', response.data.data.token);
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Registration Error Details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      throw error.response ? error.response.data : new Error('Registration failed');
+    }
+  }
+};
 // Add this export
 
    
