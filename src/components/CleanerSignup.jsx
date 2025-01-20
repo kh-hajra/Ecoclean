@@ -5,6 +5,12 @@ import Button from "./ui/button"
 import logo from "../assets/images/logo.svg"
 import { registerCleaner } from '../store/actions/auth/index.js';
 import { useDispatch } from 'react-redux';
+const servicesBySpecialization = {
+  Outdoor: ["Street Cleaning", "Sewage Cleaning", "Garbage Collection", "Residential Exterior Cleaning"],
+  Residential: ["Kitchen Cleaning", "Bathroom Cleaning", "Living Room Cleaning", "Bedroom Cleaning"],
+  Commercial: ["Office Cleaning", "Industrial Cleaning", "Hospitality Cleaning", "Retail Cleaning"],
+  Additional: ["Pest Control", "Carpet Cleaning", "Furniture Polishing"],
+};
 
 const SignUpCleaner = () => {
   const dispatch = useDispatch();
@@ -26,7 +32,7 @@ const SignUpCleaner = () => {
     promotionalHeadline: '',
     specialization: '',
     desc: '',
-    servicesoffered: '',
+    services: [],
     experienceYears: '',
     city: ''
   });
@@ -46,16 +52,19 @@ const SignUpCleaner = () => {
   const [isUsingGeolocation, setIsUsingGeolocation] = useState(false);
   const [locationError, setLocationError] = useState('');
 
+ 
+  
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: files ? files[0] : value
-    }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Clear error when user starts typing
+    // Clear related errors
     if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
+      setErrors((prevErrors) => ({ ...prevErrors, [name]: "" }));
+    }
+
+    if (name === "specialization") {
+      setFormData((prev) => ({ ...prev, services: [] })); // Reset services if specialization changes
     }
   };
 
@@ -81,27 +90,26 @@ const SignUpCleaner = () => {
       setLocationError('Geolocation is not supported by your browser');
     }
   };
-
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
-    if (!formData.password) newErrors.password = 'Password is required';
-    else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
-    if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
-    if (!formData.experience.trim()) newErrors.experience = 'Experience details are required';
-    if (!formData.location.trim()) newErrors.location = 'Location is required';
-    if (availabilities.length === 0) newErrors.availabilities = 'At least one availability slot is required';
-    if (!formData.verificationDocument) newErrors.verificationDocument = 'Verification document is required';
-    
+    if (!formData.fullName) newErrors.fullName = "Full name is required";
+    if (!formData.email) newErrors.email = "Email is required";
+    if (!formData.password) newErrors.password = "Password is required";
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords do not match";
+    if (!formData.phoneNumber) newErrors.phoneNumber = "Phone number is required";
+    if (!formData.specialization) newErrors.specialization = "Specialization is required";
+    if (formData.services.length === 0) newErrors.services = "At least one service must be selected";
+    if (availabilities.length === 0) newErrors.availabilities = "Please add at least one availability";
+    if (!formData.latitude) newErrors.latitude = "Latitude is required";
+    if (!formData.longitude) newErrors.longitude = "Longitude is required";
     return newErrors;
   };
+  
+  // In your SignUpCleaner component, update the handleSubmit function:
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formErrors = validateForm();
-    
+  
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
@@ -109,13 +117,8 @@ const SignUpCleaner = () => {
   
     setIsLoading(true);
     try {
-      // Create a plain FormData object
       const formDataToSend = new FormData();
-      
-      // Log the data being added
-      console.log('Form data being prepared:', formData);
   
-      // Add all basic fields manually
       formDataToSend.append('fullName', formData.fullName);
       formDataToSend.append('email', formData.email);
       formDataToSend.append('password', formData.password);
@@ -124,74 +127,56 @@ const SignUpCleaner = () => {
       formDataToSend.append('location', formData.location);
       formDataToSend.append('latitude', formData.latitude);
       formDataToSend.append('longitude', formData.longitude);
-      formDataToSend.append('cleanerName', formData.cleanerName);
-      formDataToSend.append('promotionalHeadline', formData.promotionalHeadline);
       formDataToSend.append('specialization', formData.specialization);
-      formDataToSend.append('desc', formData.desc);
-      formDataToSend.append('servicesoffered', formData.servicesoffered);
-      formDataToSend.append('experienceYears', formData.experienceYears);
-      formDataToSend.append('city', formData.city);
+      formDataToSend.append('services', JSON.stringify(formData.services));
+      formDataToSend.append('availabilities', JSON.stringify(availabilities));
   
-      // Add verification document if exists
-      if (formData.verificationDocument) {
-        formDataToSend.append('verificationDocument', formData.verificationDocument);
+      if (formData.profileImage) {
+        formDataToSend.append('profileImage', formData.profileImage);
       }
   
-      // Format availabilities
-      const formattedAvailabilities = availabilities.map(a => ({
-        city: formData.location,
-        location: formData.location,
-        lat: formData.latitude,
-        lng: formData.longitude,
-        day: a.day,
-        startTime: a.startTime,
-        endTime: a.endTime
-      }));
-  
-      formDataToSend.append('availabilities', JSON.stringify(formattedAvailabilities));
-  
-      // Log the final FormData entries
-      for (let pair of formDataToSend.entries()) {
-        console.log('FormData entry:', pair[0], pair[1]);
-      }
-  
-      // Dispatch the action with the FormData
-      const result = await dispatch(registerCleaner(formDataToSend)).unwrap();
-  
-      navigate('/dashboard', { 
-        state: { message: 'Registration successful. Awaiting admin approval.' } 
-      });
+      await dispatch(registerCleaner(formDataToSend)).unwrap();
+      navigate("/dashboard", { state: { message: "Registration successful!" } });
     } catch (error) {
-      console.error('Submission error:', error);
-      setErrors({ 
-        submit: error.message || 'Registration failed. Please try again.' 
-      });
+      console.error('Form submission error:', error);
+      setErrors({ submit: error.message || "An error occurred. Please try again." });
     } finally {
       setIsLoading(false);
     }
   };
+  
 
-  const addAvailability = () => {
-    if (newAvailability.startTime && newAvailability.endTime) {
-      setAvailabilities([...availabilities, { 
-        ...newAvailability,
-        id: Date.now(),
-        city: formData.location,
-        lat: formData.latitude,
-        lng: formData.longitude
-      }]);
-      setNewAvailability({ 
-        day: 'Monday', 
-        startTime: '', 
-        endTime: '',
-        city: '',
-        location: '',
-        lat: '',
-        lng: ''
-      });
-      setErrors({ ...errors, availabilities: '' });
-    }
-  };
+// Update the handleServiceChange function:
+const handleServiceChange = (e) => {
+  const { value, checked } = e.target;
+
+  setFormData((prev) => {
+    const updatedServices = checked
+      ? [...prev.services, value]
+      : prev.services.filter((service) => service !== value);
+
+    return {
+      ...prev,
+      services: updatedServices,
+    };
+  });
+};
+
+const addAvailability = () => {
+  if (newAvailability.startTime && newAvailability.endTime) {
+    // Add availability and clear errors
+    const updatedAvailability = { ...newAvailability, id: Date.now() };
+    setAvailabilities((prev) => [...prev, updatedAvailability]);
+    setErrors((prevErrors) => ({ ...prevErrors, availabilities: "" }));  // Clear availability errors
+    setNewAvailability({ day: '', startTime: '', endTime: '' }); // Reset form
+  } else {
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      availabilities: "Start and End time are required for availability",
+    }));
+  }
+};
+
 
   const removeAvailability = (id) => {
     setAvailabilities(availabilities.filter(a => a.id !== id));
@@ -404,112 +389,191 @@ const SignUpCleaner = () => {
                 </div>
                 {errors.experience && <p className="mt-2 text-sm text-red-600">{errors.experience}</p>}
               </div>
-
-              {/* Location Input with Geolocation */}
               <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                  </div>
-                  <input
-                    id="location"
-                    name="location"
-                    type="text"
-                    required
-                    className={`appearance-none block w-full pl-10 pr-3 py-2 border ${errors.location ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm`}
-                    placeholder="Your location or operating area"
-                    value={formData.location}
-                    onChange={handleChange}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={getCurrentLocation}
-                  className="mt-2 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                >
-                  {isUsingGeolocation ? 'Getting Location...' : 'Use Current Location'}
-                </button>
-                {formData.latitude && formData.longitude && (
-                  <div className="mt-2 text-sm text-gray-500">
-                    Coordinates: {formData.latitude}, {formData.longitude}
-                  </div>
-                )}
-                {locationError && <p className="mt-2 text-sm text-red-600">{locationError}</p>}
-                {errors.location && <p className="mt-2 text-sm text-red-600">{errors.location}</p>}
-              </div>
+  <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
+  <div className="mt-1 relative rounded-md shadow-sm">
+    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <MapPin className="h-5 w-5 text-gray-400" aria-hidden="true" />
+    </div>
+    <input
+      id="location"
+      name="location"
+      type="text"
+      required
+      className={`appearance-none block w-full pl-10 pr-3 py-2 border ${errors.location ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm`}
+      placeholder="Your location or operating area"
+      value={formData.location}
+      onChange={handleChange}
+    />
+  </div>
+  
+  {/* Latitude Input */}
+  <div className="mt-4">
+    <label htmlFor="latitude" className="block text-sm font-medium text-gray-700">Latitude</label>
+    <input
+      id="latitude"
+      name="latitude"
+      type="text"
+      required
+      className={`appearance-none block w-full px-3 py-2 border ${errors.latitude ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm`}
+      placeholder="Enter latitude"
+      value={formData.latitude}
+      onChange={handleChange}
+    />
+    {errors.latitude && <p className="mt-2 text-sm text-red-600">{errors.latitude}</p>}
+  </div>
 
-              {/* Availability Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Availability</h3>
-                <div className="flex flex-wrap gap-2">
-                  <select
-                    className="appearance-none block px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                    value={newAvailability.day}
-                    onChange={(e) => setNewAvailability({ ...newAvailability, day: e.target.value })}
-                  >
-                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
-                      <option key={day} value={day}>{day}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="time"
-                    className="appearance-none block px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                    value={newAvailability.startTime}
-                    onChange={(e) => setNewAvailability({ ...newAvailability, startTime: e.target.value })}
-                  />
-                  <input
-                    type="time"
-                    className="appearance-none block px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                    value={newAvailability.endTime}
-                    onChange={(e) => setNewAvailability({ ...newAvailability, endTime: e.target.value })}
-                  />
-                  <button
-                    type="button"
-                    onClick={addAvailability}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                  >
-                    <Plus className="h-5 w-5 mr-1" /> Add
-                  </button>
-                </div>
-                {errors.availabilities && <p className="mt-2 text-sm text-red-600">{errors.availabilities}</p>}
-                <ul className="space-y-2">
-                  {availabilities.map((availability) => (
-                    <li key={availability.id} className="flex justify-between items-center bg-gray-50 px-4 py-2 rounded-md shadow-sm">
-                      <span>{availability.day}: {availability.startTime} - {availability.endTime}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeAvailability(availability.id)}
-                        className="text-red-600 hover:text-red-800 focus:outline-none"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+  {/* Longitude Input */}
+  <div className="mt-4">
+    <label htmlFor="longitude" className="block text-sm font-medium text-gray-700">Longitude</label>
+    <input
+      id="longitude"
+      name="longitude"
+      type="text"
+      required
+      className={`appearance-none block w-full px-3 py-2 border ${errors.longitude ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm`}
+      placeholder="Enter longitude"
+      value={formData.longitude}
+      onChange={handleChange}
+    />
+    {errors.longitude && <p className="mt-2 text-sm text-red-600">{errors.longitude}</p>}
+  </div>
+
+  <button
+    type="button"
+    onClick={getCurrentLocation}
+    className="mt-4 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+  >
+    {isUsingGeolocation ? 'Getting Location...' : 'Use Current Location'}
+  </button>
+
+  {/* Display Auto-filled Coordinates */}
+  {formData.latitude && formData.longitude && (
+    <div className="mt-2 text-sm text-gray-500">
+      Coordinates (Auto-filled): {formData.latitude}, {formData.longitude}
+    </div>
+  )}
+
+  {locationError && <p className="mt-2 text-sm text-red-600">{locationError}</p>}
+</div>
+
+             {/* Specialization */}
+<div className="mb-4">
+  <label htmlFor="specialization" className="block text-sm font-medium text-gray-700">
+    Specialization
+  </label>
+  <select
+    name="specialization"
+    value={formData.specialization}
+    onChange={handleChange}
+    className="w-full px-4 py-2 mt-1 border rounded-md"
+  >
+    <option value="">Select Specialization</option>
+    {Object.keys(servicesBySpecialization).map((specialization) => (
+      <option key={specialization} value={specialization}>
+        {specialization}
+      </option>
+    ))}
+  </select>
+  {errors.specialization && <p className="text-sm text-red-500">{errors.specialization}</p>}
+</div>
+
+{/* Services */}
+{formData.specialization && (
+  <div className="mb-4">
+    <p className="text-sm font-medium text-gray-700">Select Services:</p>
+    {servicesBySpecialization[formData.specialization].map((service) => (
+      <label key={service} className="block text-sm">
+        <input
+          type="checkbox"
+          value={service}
+          onChange={handleServiceChange}
+          checked={formData.services.includes(service)}
+          className="mr-2"
+        />
+        {service}
+      </label>
+    ))}
+    {errors.services && <p className="text-sm text-red-500">{errors.services}</p>}
+  </div>
+)}
+{/* Availability Section */}
+<div className="space-y-4">
+  <h3 className="text-lg font-medium text-gray-900">Availability</h3>
+  <div className="flex flex-wrap gap-2">
+    <select
+      className="appearance-none block px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+      value={newAvailability.day}
+      onChange={(e) => setNewAvailability({ ...newAvailability, day: e.target.value })}
+    >
+      {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+        <option key={day} value={day}>{day}</option>
+      ))}
+    </select>
+    <input
+      type="time"
+      className="appearance-none block px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+      value={newAvailability.startTime}
+      onChange={(e) => setNewAvailability({ ...newAvailability, startTime: e.target.value })}
+    />
+    <input
+      type="time"
+      className="appearance-none block px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+      value={newAvailability.endTime}
+      onChange={(e) => setNewAvailability({ ...newAvailability, endTime: e.target.value })}
+    />
+    <button
+      type="button"
+      onClick={addAvailability}
+      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+    >
+      <Plus className="h-5 w-5 mr-1" /> Add
+    </button>
+  </div>
+  {errors.availabilities && <p className="mt-2 text-sm text-red-600">{errors.availabilities}</p>}
+  <ul className="space-y-2">
+    {availabilities.map((availability) => (
+      <li key={availability.id} className="flex justify-between items-center bg-gray-50 px-4 py-2 rounded-md shadow-sm">
+        <span>{availability.day}: {availability.startTime} - {availability.endTime}</span>
+        <button
+          type="button"
+          onClick={() => removeAvailability(availability.id)}
+          className="text-red-600 hover:text-red-800 focus:outline-none"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </li>
+    ))}
+  </ul>
+</div>
 
               {/* Verification Document Upload */}
               <div>
-                <label htmlFor="verification" className="block text-sm font-medium text-gray-700">
-                  Verification Document
-                </label>
-                <input
-                  type="file"
-                  id="verification"
-                  name="verificationDocument"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.verificationDocument ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm`}
-                />
-                {errors.verificationDocument && (
-                  <p className="mt-2 text-sm text-red-600">
-                    {errors.verificationDocument}
-                  </p>
-                )}
-              </div>
+  <label htmlFor="profileImage" className="block text-sm font-medium text-gray-700">
+    Profile Image (Optional)
+  </label>
+  <input
+    type="file"
+    id="profileImage"
+    name="profileImage"
+    accept=".jpg,.jpeg,.png"
+    onChange={(e) => {
+      const file = e.target.files[0];
+      setFormData((prev) => ({
+        ...prev,
+        profileImage: file,
+      }));
+      setErrors((prev) => ({ ...prev, profileImage: "" })); // Clear errors if any
+    }}
+    className={`appearance-none block w-full px-3 py-2 border ${
+      errors.profileImage ? "border-red-300" : "border-gray-300"
+    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm`}
+  />
+  {errors.profileImage && (
+    <p className="mt-2 text-sm text-red-600">{errors.profileImage}</p>
+  )}
+</div>
+
 
               {/* Submit Button */}
               <div>

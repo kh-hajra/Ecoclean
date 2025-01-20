@@ -77,42 +77,43 @@ const loginWithGoogle = async (tokenId) => {
     throw error;
   }
 };
-
 export const cleanerService = {
   registerCleaner: async (formData) => {
     try {
-      // Log the received FormData entries
-      console.log('Received in service:');
-      for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
+      const processedFormData = new FormData();
+
+      // Convert arrays or objects to JSON strings
+      for (let [key, value] of formData.entries()) {
+        if (Array.isArray(value) || typeof value === 'object') {
+          processedFormData.append(key, JSON.stringify(value));
+        } else {
+          processedFormData.append(key, value);
+        }
       }
 
       const response = await axios.post(
         `${API_URL}/registerCleaner`,
-        formData,
+        processedFormData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
-          }
+          },
         }
       );
 
-      if (response.data.data.token) {
+      if (response.data.data?.token) {
         localStorage.setItem('cleanerToken', response.data.data.token);
       }
 
       return response.data;
     } catch (error) {
-      console.error('Registration Error Details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
+      console.error('Registration Error:', error);
+
+      // Throwing a clearer error message
       throw error.response ? error.response.data : new Error('Registration failed');
     }
-  }
+  },
 };
-// Add this export
 
    
 
