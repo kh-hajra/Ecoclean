@@ -134,7 +134,10 @@ const SignUpCleaner = () => {
       if (formData.profileImage) {
         formDataToSend.append('profileImage', formData.profileImage);
       }
-  
+      console.log('Selected File:', formData.profileImage);
+
+      console.log('FormData frontend:', Array.from(formDataToSend.entries()));
+
       await dispatch(registerCleaner(formDataToSend)).unwrap();
       navigate("/dashboard", { state: { message: "Registration successful!" } });
     } catch (error) {

@@ -36,3 +36,10 @@
     transform: rotate(360deg);
   }
 }
+@font-face {
+  font-family: 'Rische';
+  src: url('/src/assets/fonts/Rische-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+

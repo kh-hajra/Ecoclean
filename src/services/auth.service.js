@@ -80,11 +80,14 @@ const loginWithGoogle = async (tokenId) => {
 export const cleanerService = {
   registerCleaner: async (formData) => {
     try {
+      // Create a new FormData instance to ensure proper file handling
       const processedFormData = new FormData();
-
-      // Convert arrays or objects to JSON strings
+      
+      // Special handling for File objects and JSON data
       for (let [key, value] of formData.entries()) {
-        if (Array.isArray(value) || typeof value === 'object') {
+        if (value instanceof File) {
+          processedFormData.append(key, value, value.name);
+        } else if (typeof value === 'object') {
           processedFormData.append(key, JSON.stringify(value));
         } else {
           processedFormData.append(key, value);
@@ -108,9 +111,7 @@ export const cleanerService = {
       return response.data;
     } catch (error) {
       console.error('Registration Error:', error);
-
-      // Throwing a clearer error message
-      throw error.response ? error.response.data : new Error('Registration failed');
+      throw error.response?.data || new Error('Registration failed');
     }
   },
 };

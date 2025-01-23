@@ -1,29 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, ArrowRight } from 'lucide-react';
+
+import { CheckCircle, ArrowRight, MapPin, Calendar, Clock, MapPinIcon } from "lucide-react"
 import BackButton from '../components/ui/BackButton';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-
+import CleanerModal from './CleanerModal';
+import BookingDetails from './BookingDetail';
+import street from "../assets/images/street2.png";
 // Custom popup styles remain the same
 const customPopupStyle = `
-  .custom-popup {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    padding: 0;
-    min-width: 180px;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
-  .custom-popup .mapboxgl-popup-content {
-    padding: 0;
-    background: transparent;
-  }
+ .custom-popup {
+  background: transparent;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(67, 56, 224, 0.08);
+  padding: 0;
+  min-width: 180px;
+  max-width: 200px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.custom-popup .mapboxgl-popup-content {
+  padding: 0;
+  background: white;  /* Changed from transparent to white */
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #4338E0;  /* Made border slightly thinner */
+}
   .custom-popup .mapboxgl-popup-close-button {
-    right: 4px;
-    top: 4px;
-    color: #fff;
+    right: 6px;
+    top: 6px;
+    color: #4338E0;
     font-size: 14px;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 50%;
     width: 20px;
     height: 20px;
@@ -33,28 +41,41 @@ const customPopupStyle = `
     cursor: pointer;
     border: none;
     padding: 0;
+    outline: none;
+    transition: all 0.2s ease;
   }
-  .popup-header {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 8px 8px 0 0;
-    font-size: 0.9em;
-  }
+ .popup-header {
+  background: white;  /* Ensuring header is plain white */
+  color: #111827;
+  padding: 12px;
+  border-bottom: 1px solid #E5E7EB;
+}
+  
   .popup-content {
-    padding: 8px 12px;
-    font-size: 0.85em;
+    background: white;
+    padding: 8px 12px 12px;
   }
+  
   .popup-info-item {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 4px;
-    color: #374151;
+    margin-bottom: 6px;
+    color: #4B5563;
+    font-size: 0.85em;
   }
+  
   .popup-rating {
+    color: #6B7280;
     font-size: 0.8em;
     margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  
+  .popup-rating .star {
+    color: #4338E0;
   }
 `;
 
@@ -66,6 +87,7 @@ const addCustomStyles = () => {
 };
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoia2gtaGFqcmEiLCJhIjoiY202M2N4dHI0MTcyaDJqc28yMnNrZG02byJ9.jUssFJPm7xaP0qGAttJxzg';
+
 
 function StreetCleaning() {
   const [serviceData, setServiceData] = useState(null);
@@ -80,20 +102,22 @@ function StreetCleaning() {
   const [showMap, setShowMap] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Add custom styles on mount
+  const [gettingCurrentLocation, setGettingCurrentLocation] = useState(false);
+// ... (previous state declarations remain the same)
+const [selectedCleaner, setSelectedCleaner] = useState(null);
+const [selectedMarker, setSelectedMarker] = useState(null);
+const [showCleanerModal, setShowCleanerModal] = useState(false);
+const [currentCleaner, setCurrentCleaner] = useState(null);
   useEffect(() => {
     addCustomStyles();
   }, []);
 
-  // Fetch service details on component mount
   useEffect(() => {
     const fetchServiceDetails = async () => {
       try {
         const response = await fetch('http://localhost:8080/api/services/services/street-cleaning');
         if (!response.ok) throw new Error('Failed to fetch service details');
         const data = await response.json();
-        console.log('Service data:', data);
         setServiceData(data.data);
         setLoading(false);
       } catch (err) {
@@ -105,9 +129,8 @@ function StreetCleaning() {
     fetchServiceDetails();
   }, []);
 
-  // Initialize map
   useEffect(() => {
-    if (showMap && !map) {
+    if (showMap) {
       try {
         const mapInstance = new mapboxgl.Map({
           container: 'map',
@@ -138,52 +161,78 @@ function StreetCleaning() {
     };
   }, [showMap]);
 
-  // Handle markers
   useEffect(() => {
     if (map && cleaners && cleaners.length > 0) {
       // Clear existing markers
       const markers = document.getElementsByClassName('mapboxgl-marker');
-      while(markers[0]) {
+      while (markers[0]) {
         markers[0].parentNode.removeChild(markers[0]);
       }
-
+  
       cleaners.forEach((cleaner) => {
         if (cleaner.coordinates) {
+          const profileImageUrl = cleaner.profileImage || 'default-image-url.png';
+          const formattedImageUrl = profileImageUrl.startsWith('http') 
+            ? profileImageUrl 
+            : `http://localhost:8080/uploads/${profileImageUrl}`;
+      
+          const popupContent = document.createElement('div');
+          popupContent.innerHTML = `
+          <div class="popup-container" style="cursor: pointer;">
+            <div class="popup-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <img 
+                  src="${formattedImageUrl}" 
+                  alt="${cleaner.cleanerName || 'Cleaner'}" 
+                  style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;"
+                />
+                <div>
+                  <div style="font-weight: 600; font-size: 0.95em;">
+                    ${cleaner.cleanerName || 'Cleaner'}
+                  </div>
+                  <div class="popup-rating">
+                    <span class="star">★</span> 
+                    <span>${cleaner.rating || '5.0'}</span>
+                    <span style="margin: 0 2px;">•</span>
+                    <span>${cleaner.distance?.toFixed(1) || 0}km</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="popup-content">
+              <div class="popup-info-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4338E0" stroke-width="2">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+                ${cleaner.phone || 'N/A'}
+              </div>
+              <div class="popup-info-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4338E0" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12" y2="17"></line>
+                </svg>
+                ${cleaner.specialization || 'General Cleaning'}
+              </div>
+            </div>
+          </div>
+        `;
+  
+          // Add click event to the popup content
+          popupContent.querySelector('.popup-container').addEventListener('click', () => {
+            setCurrentCleaner(cleaner);
+            setShowCleanerModal(true);
+          });
+  
           const popup = new mapboxgl.Popup({
             closeButton: true,
             closeOnClick: false,
             className: 'custom-popup',
-            maxWidth: '200px'
+            maxWidth: '250px'
           })
-          .setHTML(`
-            <div>
-              <div class="popup-header">
-                <div style="font-weight: 600;">
-                  ${cleaner.cleanerName || 'Cleaner'}
-                </div>
-                <div class="popup-rating">
-                  ★ ${cleaner.rating || '5.0'} • ${cleaner.distance?.toFixed(1) || 0}km
-                </div>
-              </div>
-              <div class="popup-content">
-                <div class="popup-info-item">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                  </svg>
-                  ${cleaner.phone || 'N/A'}
-                </div>
-                <div class="popup-info-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                    <line x1="12" y1="17" x2="12" y2="17"></line>
-                  </svg>
-                  ${cleaner.specialization || 'General Cleaning'}
-                </div>
-              </div>
-            </div>
-          `);
-
+          .setDOMContent(popupContent);
+  
+          // Create marker without click handler
           new mapboxgl.Marker({
             color: '#22c55e',
             scale: 0.8
@@ -191,11 +240,11 @@ function StreetCleaning() {
           .setLngLat([cleaner.coordinates.longitude, cleaner.coordinates.latitude])
           .setPopup(popup)
           .addTo(map);
-
+  
           popup.addTo(map);
         }
       });
-
+  
       if (cleaners[0]?.coordinates) {
         const bounds = new mapboxgl.LngLatBounds();
         cleaners.forEach(cleaner => {
@@ -206,9 +255,49 @@ function StreetCleaning() {
         map.fitBounds(bounds, { padding: 50 });
       }
     }
-  }, [map, cleaners]);
+  }, [map, cleaners, selectedCleaner]);
+  const handleCleanerSelect = (cleaner) => {
+    setSelectedCleaner(cleaner.id === selectedCleaner?.id ? null : cleaner);
+    setShowCleanerModal(false);
+  };
 
-  // Location suggestions handler
+  const handleChangeCleaner = () => {
+    setSelectedCleaner(null);
+  };
+
+  const getCurrentLocation = () => {
+    setGettingCurrentLocation(true);
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${mapboxgl.accessToken}`
+          );
+          const data = await response.json();
+          if (data.features && data.features.length > 0) {
+            setBookingDetails({
+              ...bookingDetails,
+              location: data.features[0].place_name
+            });
+          }
+        } catch (error) {
+          console.error('Error getting location:', error);
+          alert('Error getting your location. Please try entering it manually.');
+        } finally {
+          setGettingCurrentLocation(false);
+        }
+      }, (error) => {
+        console.error('Error:', error);
+        alert('Unable to get your location. Please try entering it manually.');
+        setGettingCurrentLocation(false);
+      });
+    } else {
+      alert('Geolocation is not supported by your browser');
+      setGettingCurrentLocation(false);
+    }
+  };
+
   const handleLocationInput = async (e) => {
     const value = e.target.value;
     setBookingDetails({ ...bookingDetails, location: value });
@@ -231,7 +320,6 @@ function StreetCleaning() {
     }
   };
 
-  // Select location from suggestions
   const handleSelectLocation = (suggestion) => {
     setBookingDetails({
       ...bookingDetails,
@@ -265,27 +353,13 @@ function StreetCleaning() {
         }
 
         const data = await response.json();
-        
+
         if (data.cleaners && Array.isArray(data.cleaners) && data.cleaners.length > 0) {
           setCleaners(data.cleaners);
           setShowMap(true);
-
-          if (map && data.cleaners[0]?.coordinates) {
-            const bounds = new mapboxgl.LngLatBounds();
-            data.cleaners.forEach((cleaner) => {
-              if (cleaner.coordinates) {
-                bounds.extend([
-                  cleaner.coordinates.longitude,
-                  cleaner.coordinates.latitude,
-                ]);
-              }
-            });
-            map.fitBounds(bounds, { padding: 50 });
-          }
         } else {
           alert('No cleaners found matching your criteria.');
           setCleaners([]);
-          setShowMap(false);
         }
       } catch (error) {
         console.error('Error fetching cleaners:', error);
@@ -295,6 +369,9 @@ function StreetCleaning() {
       alert('Please fill all booking details!');
     }
   };
+
+  // Get today's date in YYYY-MM-DD format for min date attribute
+  const today = new Date().toISOString().split('T')[0];
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -311,135 +388,166 @@ function StreetCleaning() {
   ];
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-white min-h-screen py-16 px-4 sm:px-6 lg:px-8">
-      <BackButton to="/outdoor" />
-      <div className="max-w-7xl mx-auto">
-        {/* Hero Section */}
-        <div className="lg:grid lg:grid-cols-2 lg:gap-8 items-center mb-12">
-          <div>
-            <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl">
-              <span>Street </span>
-              <span className="text-green-600">Cleaning</span>
-            </h1>
-            <p className="mt-4 text-xl text-gray-500">
-              {serviceData?.description || 'Professional street cleaning services for your community'}
-            </p>
-          </div>
-          <div className="mt-8 lg:mt-0">
+    <div className="min-h-screen bg-[#f8f9ff]">
+    <BackButton to="/outdoor" />
+    <div className="relative  lg:h-[400px] flex items-center justify-center overflow-hidden">
+  {/* Image */}
   <img
-    src={serviceData?.imageUrl || '/api/placeholder/600/400'}
-    alt="Street Cleaning Service"
-    className="w-2/3 max-w-xs rounded-full shadow-xl transform hover:scale-105 transition-transform duration-300 ease-in-out"
-  />
+      src={street}
+      alt="Street Cleaning"
+      className=" mt-20 w-[800px] sm:w-[900px] lg:w-[1000px] object-contain"
+    />
+
+  {/* Text Content */}
+  <div className="absolute z-10 text-center px-8 max-w-4xl mt-2">
+    <p className="text-sm font-medium mb-3 text-white tracking-wide" >We are</p>
+    <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-wide leading-tight font-serif"  style={{ fontFamily: 'Rische, serif' }}>
+      <span className="text-white">Street Clea</span>
+      <span className="text-black">nin</span>
+      <span className="text-white">g</span>
+    </h1>
+    <p className="text-lg sm:text-xl lg:text-2xl text-gray-200  pt-5 max-w-2xl mx-auto" >
+<span className="text-black">Prof </span> essional street clea<span className="text-black">ning services</span> for your community.  <span className="text-black">Making</span> your neighbor<span className="text-black">hood cleaner</span>,one street at a time.
+    </p>
+
+    {/* Ratings */}
+    <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-8">
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4].map((star) => (
+          <svg
+            key={star}
+            className="w-5 h-5 text-yellow-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+        <span className="text-sm text-black-300 ml-2">5000+ Client reviews</span>
+      </div>
+    </div>
+  </div>
 </div>
 
+    {/* Booking Section */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="bg-white rounded-2xl shadow-lg p-8">
+        <h2 className="text-2xl font-bold mb-6">Book Your Cleaning Service</h2>
 
-        </div>
-
-        {!showMap ? (
-          <div>
-            <div className="bg-white p-8 rounded-lg shadow-lg">
-              <h2 className="text-2xl font-bold mb-4">Book Your Cleaning Service</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-gray-700 font-medium">Date</label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={bookingDetails.date}
-                    onChange={(e) => setBookingDetails({
-                      ...bookingDetails,
-                      date: e.target.value
-                    })}
-                    className="w-full border border-gray-300 rounded-md p-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-medium">Time</label>
-                  <input
-                    type="time"
-                    name="time"
-                    value={bookingDetails.time}
-                    onChange={(e) => setBookingDetails({
-                      ...bookingDetails,
-                      time: e.target.value
-                    })}
-                    className="w-full border border-gray-300 rounded-md p-2"
-                  />
-                </div>
-                <div className="relative">
-                  <label className="block text-gray-700 font-medium">Location</label>
-                  <input
-                    type="text"
-                    name="location"
-                    placeholder="Enter full address (e.g., 123 Main St, City, Country)"
-                    value={bookingDetails.location}
-                    onChange={handleLocationInput}
-                    className="w-full border border-gray-300 rounded-md p-2"
-                  />
-                  {locationSuggestions.length > 0 && (
-                    <div className="absolute z-10 w-full bg-white mt-1 rounded-md shadow-lg">
-                      {locationSuggestions.map((suggestion, index) => (
-                        <div
-                          key={index}
-                          className="p-2 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleSelectLocation(suggestion)}
-                        >
-                          {suggestion.place_name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <p className="mt-1 text-sm text-gray-500">
-                    Please enter a complete address for accurate results
-                  </p>
-                </div>
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            {/* Date & Time Selection */}
+            <div className="bg-gray-50 rounded-xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-semibold">Select Date & Time</h3>
               </div>
-              <button
-                onClick={handleSearchCleaners}
-                className="mt-6 bg-green-600 text-white px-4 py-2 rounded-md shadow hover:bg-green-700 transition-colors"
-              >
-                Look for Cleaners
-                <ArrowRight className="ml-2 h-5 w-5 inline" />
-              </button>
+              <div className="space-y-4">
+                <input
+                  type="date"
+                  value={bookingDetails.date}
+                  min={today}
+                  onChange={(e) => setBookingDetails({ ...bookingDetails, date: e.target.value })}
+                  className="w-full rounded-lg border-gray-200 p-3 text-sm focus:ring-2 focus:ring-indigo-500"
+                />
+                <input
+                  type="time"
+                  value={bookingDetails.time}
+                  onChange={(e) => setBookingDetails({ ...bookingDetails, time: e.target.value })}
+                  className="w-full rounded-lg border-gray-200 p-3 text-sm focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
             </div>
-          </div>
-        ) : (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Nearby Cleaners</h2>
-            <div id="map" className="w-full h-96 rounded-lg shadow-lg"></div>
-          </div>
-        )}
 
-        {/* Features Section */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden lg:grid lg:grid-cols-2 lg:gap-4 mt-12">
-          <div className="pt-10 pb-12 px-6 sm:pt-16 sm:px-16 lg:py-16 lg:pr-0 xl:py-20 xl:px-20">
-            <div className="lg:self-center">
-              <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                <span className="block">Clean streets,</span>
-                <span className="block text-green-600">happy communities</span>
-              </h2>
-              <p className="mt-4 text-lg leading-6 text-gray-500">
-                {serviceData?.additionalDetails || 'Our street cleaning services are designed to maintain the cleanliness and safety of your communitys roads and public spaces. From regular sweeping to specialized cleaning, we ensure your streets stay in top condition year-round.'}
-              </p>
+            {/* Location Selection */}
+            <div className="bg-gray-50 rounded-xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <MapPinIcon className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-semibold">Select Location</h3>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Enter your address"
+                  value={bookingDetails.location}
+                  onChange={handleLocationInput}
+                  className="w-full rounded-lg border-gray-200 p-3 text-sm focus:ring-2 focus:ring-indigo-500 pr-10"
+                />
+                <button
+                  onClick={getCurrentLocation}
+                  disabled={gettingCurrentLocation}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  <MapPin className="w-5 h-5 text-gray-400 hover:text-indigo-600" />
+                </button>
+              </div>
+              {locationSuggestions.length > 0 && (
+                <div className="absolute z-20 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-100">
+                  {locationSuggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      onClick={() => handleSelectLocation(suggestion)}
+                      className="p-3 hover:bg-gray-50 cursor-pointer text-sm"
+                    >
+                      {suggestion.place_name}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-          <div className="pt-10 pb-12 px-6 sm:pt-16 sm:px-16 lg:py-16 lg:pr-0 xl:py-20 xl:px-20">
-            <ul className="space-y-4">
+
+          {/* Services List */}
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h3 className="font-semibold mb-4">Our Services</h3>
+            <ul className="space-y-3">
               {services.map((service, index) => (
-                <li key={index} className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-6 w-6 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-base text-gray-700">{service}</p>
+                <li key={index} className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-gray-600">{service}</span>
                 </li>
               ))}
             </ul>
           </div>
         </div>
+
+        <div className="mt-8 flex justify-end">
+          <button
+            onClick={handleSearchCleaners}
+            className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Look for Cleaners
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
+
+      {/* Map and Selected Cleaner */}
+      {showMap && (
+        <div className="mt-8 space-y-8">
+          <div id="map" className="w-full h-96 rounded-xl shadow-lg" />
+
+          {selectedCleaner && (
+            <BookingDetails
+              selectedCleaner={selectedCleaner}
+              service={serviceData}
+              bookingDetails={bookingDetails}
+              onChangeCleaner={handleChangeCleaner}
+            />
+          )}
+        </div>
+      )}
+
+      <CleanerModal
+        cleaner={currentCleaner}
+        isOpen={showCleanerModal}
+        onClose={() => setShowCleanerModal(false)}
+        onSelect={handleCleanerSelect}
+        isSelected={selectedCleaner?.id === currentCleaner?.id}
+      />
     </div>
-  );
+  </div>
+)
 }
 
-export default StreetCleaning;
+export default StreetCleaning
