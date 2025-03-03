@@ -3,31 +3,29 @@ import { CheckCircle, ArrowRight, MapPin, Calendar, Clock, MapPinIcon } from "lu
 import BackButton from '../components/ui/BackButton';
 import CleanerModal from './CleanerModal';
 import BookingDetails from './BookingDetail';
-import specialty from "../assets/images/street2.png"; // Replace with your image path
+import street from "../assets/images/street2.png";
 import ServiceHeader from '../components/ServiceHeader';
 import BookingForm from '../components/BookingForm';
 import ServiceMap from '../components/ServiceMap';
+import { toast } from 'react-toastify';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { toast } from 'react-toastify';
-import BookingSummaryModal from './BookingSummaryModal';
 import { useNavigate } from 'react-router-dom';
+import BookingSummaryModal from './BookingSummaryModal';
 mapboxgl.accessToken = 'pk.eyJ1Ijoia2gtaGFqcmEiLCJhIjoiY202M2N4dHI0MTcyaDJqc28yMnNrZG02byJ9.jUssFJPm7xaP0qGAttJxzg';
-
 const packageDescriptions = {
-  basic: "Targeted cleaning for specialized areas.",
-  standard: "Advanced cleaning for commercial spaces.",
-  premium: "High-end cleaning for unique industry needs.",
+  basic: "Regular sidewalk and curb cleaning for small areas",
+  standard: "Complete street cleaning with waste collection",
+  premium: "High-pressure cleaning and sanitization of public spaces",
 };
-
-const CommercialSpecialtyCleaning = () => {
-  const navigate = useNavigate();
+const SewageCleaning = () => {
   const [serviceData, setServiceData] = useState(null);
   const [bookingDetails, setBookingDetails] = useState({
     date: '',
     time: '',
     location: '',
   });
+   const navigate = useNavigate();
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [cleaners, setCleaners] = useState([]);
   const [showMap, setShowMap] = useState(false);
@@ -40,16 +38,15 @@ const CommercialSpecialtyCleaning = () => {
   const [currentCleaner, setCurrentCleaner] = useState(null);
   const [popupZIndex, setPopupZIndex] = useState({});
   const popupRefs = useRef({});
- const [isBookingSummaryOpen, setIsBookingSummaryOpen] = useState(false);
+  const [isBookingSummaryOpen, setIsBookingSummaryOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
+    
   
-  const [bookingId, setBookingId] = useState(null);
   useEffect(() => {
     const fetchServiceDetails = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/services/commercial-specialty-cleaning');
+        const response = await fetch('http://localhost:8080/api/services/sewage-cleaning');
         if (!response.ok) throw new Error('Failed to fetch service details');
         const data = await response.json();
         setServiceData(data.data);
@@ -226,8 +223,8 @@ const CommercialSpecialtyCleaning = () => {
       try {
         const queryParams = new URLSearchParams({
           location: bookingDetails.location,
-          specialization: "Commercial",
-          service: "Commercial Specialty Cleaning",
+          specialization: "Outdoor",
+          service: "Sewage Cleaning",
           date: bookingDetails.date,
           time: bookingDetails.time,
         }).toString();
@@ -267,14 +264,14 @@ const CommercialSpecialtyCleaning = () => {
   if (error) return <div>Error: {error}</div>;
 
   const services = serviceData?.features || [
-    "High-rise window cleaning",
-    "Carpet and upholstery cleaning",
-    "Pressure washing",
+    "Mechanical sweeping of streets and roads",
+    "Litter and debris removal",
+    "Gutter and curb cleaning",
+    "Stormwater drain maintenance",
     "Graffiti removal",
-    "Post-construction cleaning",
-    "Disinfection services",
+    "Leaf collection and disposal",
+    "Snow and ice removal (seasonal)",
     "Special event clean-up",
-    "Custom cleaning solutions",
   ];
  const handleConfirmBooking = async () => {
     console.log("handleConfirmBooking started");
@@ -385,47 +382,48 @@ console.log('Total price:', totalPrice);
   };
   return (
     <div className="min-h-screen bg-[#f8f9ff]">
-      <BackButton to="/commercial" />
-      <div className="relative lg:h-[400px] flex items-center justify-center overflow-hidden">
-        <img
-          src={specialty}
-          alt="Commercial Specialty Cleaning"
-          className="mt-20 w-[800px] sm:w-[900px] lg:w-[1000px] object-contain"
-        />
-        <div className="absolute z-10 text-center px-8 max-w-4xl mt-2">
-          <p className="text-sm font-medium mb-3 text-white tracking-wide">We are</p>
-          <h1
-  className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-wide leading-tight font-serif whitespace-nowrap"
-  style={{ fontFamily: 'Rische, serif' }}
->
-  <span className="text-white">Specialized </span>
-  <span className="text-black">Cle</span>
-  <span className="text-white">ani</span>
-  <span className="text-black">ng</span>
+    <BackButton to="/outdoor" />
+    <div className="relative  lg:h-[400px] flex items-center justify-center overflow-hidden">
+  {/* Image */}
+  <img
+      src={street}
+      alt="Street Cleaning"
+      className=" mt-20 w-[800px] sm:w-[900px] lg:w-[1000px] object-contain"
+    />
 
-</h1>
+  {/* Text Content */}
+  <div className="absolute z-10 text-center px-8 max-w-4xl mt-2">
+    <p className="text-sm font-medium mb-3 text-white tracking-wide" >We are</p>
+    <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-wide leading-tight font-serif"  style={{ fontFamily: 'Rische, serif' }}>
+      <span className="text-white">Sewage Cle</span>
+      <span className="text-black">anin</span>
+      <span className="text-white">g</span>
+    </h1>
+    <p className="text-lg sm:text-xl lg:text-2xl text-gray-200 pt-5 max-w-2xl mx-auto">
+    <span className="text-black">Expert</span> sewage cleaning <span className="text-black">services to</span>  maintain <span className="text-black">hygiene</span>  and prevent  <span className="text-black"> blockages in your </span> area.
+  </p>
 
-          <p className="text-lg sm:text-xl lg:text-2xl text-gray-200 pt-5 max-w-2xl mx-auto">
-            <span className="text-black">Tailored </span>cleaning solutions <span className="text-black">for unique </span>commercial spaces and  <span className="text-black">requirements</span>
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-8">
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4].map((star) => (
-                <svg
-                  key={star}
-                  className="w-5 h-5 text-yellow-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
-              <span className="text-sm text-black-300 ml-2">5000+ Client reviews</span>
-            </div>
-          </div>
-        </div>
+    {/* Ratings */}
+    <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-8">
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4].map((star) => (
+          <svg
+            key={star}
+            className="w-5 h-5 text-yellow-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+        <span className="text-sm text-black-300 ml-2">5000+ Client reviews</span>
       </div>
+    </div>
+  </div>
+</div>
+      {/* Main Container for Booking Form, Map, and Pricing */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Booking Form Section */}
         <div className="mb-8">
           <BookingForm
             bookingDetails={bookingDetails}
@@ -439,8 +437,11 @@ console.log('Total price:', totalPrice);
             services={services}
           />
         </div>
+
+        {/* Map and Pricing Section */}
         {showMap && (
           <div className="space-y-8">
+            {/* Map Section */}
             <div>
               <ServiceMap
                 cleaners={cleaners}
@@ -448,6 +449,8 @@ console.log('Total price:', totalPrice);
                 setShowCleanerModal={setShowCleanerModal}
               />
             </div>
+
+            {/* Pricing Section */}
             {selectedCleaner && (
               <div>
                 <BookingDetails
@@ -463,6 +466,7 @@ console.log('Total price:', totalPrice);
           </div>
         )}
       </div>
+
       <CleanerModal
         cleaner={currentCleaner}
         isOpen={showCleanerModal}
@@ -488,4 +492,4 @@ console.log('Total price:', totalPrice);
   );
 };
 
-export default CommercialSpecialtyCleaning;
+export default SewageCleaning;

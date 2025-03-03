@@ -22,17 +22,18 @@ const login = async (body) => {
   return response; // Ensure the backend includes the role in this response
 };
 
-  const logout = async () => {
-    try {
-      const response = await httpService.post('/users/logout');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-
-
+const logout = async () => {
+  try {
+    const response = await httpService.post("/users/logout", null, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('userToken') || localStorage.getItem('cleanerToken')}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
   
 const loginSSO = (body) =>

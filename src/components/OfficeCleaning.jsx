@@ -1,118 +1,486 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { CheckCircle, ArrowRight, Coffee, Monitor, Users, Clock } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { CheckCircle, ArrowRight, MapPin, Calendar, Clock, MapPinIcon } from "lucide-react";
 import BackButton from '../components/ui/BackButton';
-function OfficeCleaning() {
-  const services = [
-    "Daily janitorial services",
-    "Carpet and upholstery cleaning",
-    "Window and glass cleaning",
-    "Restroom sanitation",
-    "Breakroom and kitchen cleaning",
-    "Trash removal and recycling",
-    "Dusting and surface cleaning",
-    "Floor care (vacuuming, mopping, waxing)",
-  ];
+import CleanerModal from './CleanerModal';
+import BookingDetails from './BookingDetail';
+import office from "../assets/images/street2.png"; // Replace with your image path
+import ServiceHeader from '../components/ServiceHeader';
+import BookingForm from '../components/BookingForm';
+import ServiceMap from '../components/ServiceMap';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { toast } from 'react-toastify';
+import BookingSummaryModal from './BookingSummaryModal';
+import { useNavigate } from 'react-router-dom';
+mapboxgl.accessToken = 'pk.eyJ1Ijoia2gtaGFqcmEiLCJhIjoiY202M2N4dHI0MTcyaDJqc28yMnNrZG02byJ9.jUssFJPm7xaP0qGAttJxzg';
 
+const packageDescriptions = {
+  basic: "Light cleaning for small office spaces.",
+  standard: "Regular cleaning for mid-sized offices.",
+  premium: "Deep cleaning for large office setups.",
+};
+
+const OfficeCleaning = () => {
+  const navigate = useNavigate();
+  const [serviceData, setServiceData] = useState(null);
+  const [bookingDetails, setBookingDetails] = useState({
+    date: '',
+    time: '',
+    location: '',
+  });
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [cleaners, setCleaners] = useState([]);
+  const [showMap, setShowMap] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [gettingCurrentLocation, setGettingCurrentLocation] = useState(false);
+  const [selectedCleaner, setSelectedCleaner] = useState(null);
+  const [selectedMarker, setSelectedMarker] = useState(null);
+  const [showCleanerModal, setShowCleanerModal] = useState(false);
+  const [currentCleaner, setCurrentCleaner] = useState(null);
+  const [popupZIndex, setPopupZIndex] = useState({});
+  const popupRefs = useRef({});
+ const [isBookingSummaryOpen, setIsBookingSummaryOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [bookingId, setBookingId] = useState(null);
+  useEffect(() => {
+    const fetchServiceDetails = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/services/office-cleaning');
+        if (!response.ok) throw new Error('Failed to fetch service details');
+        const data = await response.json();
+        setServiceData(data.data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchServiceDetails();
+  }, []);
+
+  const handleCleanerSelect = (cleaner) => {
+    setSelectedCleaner(cleaner.id === selectedCleaner?.id ? null : cleaner);
+    setShowCleanerModal(false);
+  };
+
+  const handleChangeCleaner = () => {
+    setSelectedCleaner(null);
+  };
+
+  const handleLocationInput = async (e) => {
+    const value = e.target.value;
+    console.log('Input value:', value);
+    setBookingDetails(prev => ({ ...prev, location: value }));
+  
+    if (value.length > 2) {
+      try {
+        const searchText = encodeURIComponent(value.trim());
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${searchText}.json`;
+  
+        // Enhanced parameters for more detailed results
+        const params = new URLSearchParams({
+          access_token: mapboxgl.accessToken,
+          country: 'PK', // Limit to Pakistan
+          types: 'address,poi,neighborhood,locality,place', // Include more specific types
+          limit: '10', // Increase the number of results
+          language: 'en', // Set language to English
+          proximity: bookingDetails.coordinates ? 
+            `${bookingDetails.coordinates.longitude},${bookingDetails.coordinates.latitude}` : 
+            '74.3587,31.5204', // Default to Lahore coordinates
+          autocomplete: 'true', // Enable autocomplete
+          fuzzyMatch: 'true', // Enable fuzzy matching
+        });
+  
+        const response = await fetch(`${url}?${params}`);
+  
+        if (!response.ok) {
+          throw new Error(`Geocoding failed: ${response.status}`);
+        }
+  
+        const data = await response.json();
+  
+        if (data.features) {
+          const suggestions = data.features.map(feature => {
+            // Extract context information
+            const contextParts = feature.context || [];
+            const neighborhood = contextParts.find(c => c.id.startsWith('neighborhood'))?.text;
+            const locality = contextParts.find(c => c.id.startsWith('locality'))?.text;
+            const place = contextParts.find(c => c.id.startsWith('place'))?.text;
+  
+            // Create a more detailed place description
+            const mainText = feature.text;
+            let secondaryText = [
+              neighborhood,
+              locality,
+              place,
+              feature.properties?.address,
+              feature.context?.map(c => c.text).join(', ')
+            ]
+              .filter(Boolean)
+              .join(', ')
+              .replace(/,\s*,/g, ',')
+              .replace(/^,\s*/, '')
+              .replace(/\s*,\s*$/, '');
+  
+            // Remove redundant information
+            secondaryText = secondaryText.replace(new RegExp(`^${mainText},\\s*`), '');
+  
+            return {
+              place_name: feature.place_name,
+              main_text: mainText,
+              secondary_text: secondaryText,
+              coordinates: {
+                longitude: feature.center[0],
+                latitude: feature.center[1]
+              },
+              // Add additional metadata for better display
+              type: feature.place_type[0],
+              relevance: feature.relevance,
+              properties: feature.properties
+            };
+          })
+          // Sort by relevance
+          .sort((a, b) => b.relevance - a.relevance)
+          // Filter out duplicate places
+          .filter((suggestion, index, self) => 
+            index === self.findIndex(s => s.place_name === suggestion.place_name)
+          );
+  
+          setLocationSuggestions(suggestions);
+        }
+      } catch (err) {
+        console.error('Error in handleLocationInput:', err);
+        toast.error('Unable to fetch location suggestions. Please try again.');
+        setLocationSuggestions([]);
+      }
+    } else {
+      setLocationSuggestions([]);
+    }
+  };
+  
+  const handleSelectLocation = (suggestion) => {
+    if (!suggestion) return;
+  
+    setBookingDetails(prev => ({
+      ...prev,
+      location: suggestion.place_name,
+      coordinates: {
+        longitude: suggestion.coordinates.longitude,
+        latitude: suggestion.coordinates.latitude
+      }
+    }));
+  
+    setLocationSuggestions([]);
+  };
+   
+  const getCurrentLocation = () => {
+    setGettingCurrentLocation(true);
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${mapboxgl.accessToken}`
+          );
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch location details');
+          }
+          
+          const data = await response.json();
+          if (data.features && data.features.length > 0) {
+            setBookingDetails(prev => ({
+              ...prev,
+              location: data.features[0].place_name,
+              coordinates: {
+                longitude: longitude,
+                latitude: latitude
+              }
+            }));
+          }
+        } catch (error) {
+          console.error('Error getting location:', error);
+          toast.error('Error getting your location. Please try entering it manually.');
+        } finally {
+          setGettingCurrentLocation(false);
+        }
+      }, (error) => {
+        console.error('Geolocation error:', error);
+        toast.error('Unable to get your location. Please try entering it manually.');
+        setGettingCurrentLocation(false);
+      });
+    } else {
+      toast.error('Geolocation is not supported by your browser');
+      setGettingCurrentLocation(false);
+    }
+  };
+ 
+
+  const handleSearchCleaners = async () => {
+    if (bookingDetails.date && bookingDetails.time && bookingDetails.location) {
+      try {
+        const queryParams = new URLSearchParams({
+          location: bookingDetails.location,
+          specialization: "Commercial",
+          service: "Office Cleaning",
+          date: bookingDetails.date,
+          time: bookingDetails.time,
+        }).toString();
+
+        const response = await fetch(
+          `http://localhost:8080/api/cleaners/nearby?${queryParams}`,
+          {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch cleaners');
+        }
+
+        const data = await response.json();
+
+        if (data.cleaners && Array.isArray(data.cleaners) && data.cleaners.length > 0) {
+          setCleaners(data.cleaners);
+          setShowMap(true);
+        } else {
+          alert('No cleaners found matching your criteria.');
+          setCleaners([]);
+        }
+      } catch (error) {
+        console.error('Error fetching cleaners:', error);
+        alert(error.message || 'Error loading cleaners. Please try again.');
+      }
+    } else {
+      alert('Please fill all booking details!');
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  const services = serviceData?.features || [
+    "Daily office cleaning",
+    "Carpet and upholstery cleaning",
+    "Window cleaning",
+    "Restroom sanitation",
+    "Trash removal",
+    "Disinfection services",
+    "Floor polishing",
+    "Special event clean-up",
+  ];
+ const handleConfirmBooking = async () => {
+    console.log("handleConfirmBooking started");
+    setIsSubmitting(true);
+    
+    try {
+      // Validate required data
+      if (!selectedCleaner?.id || !selectedPackage?.price || !bookingDetails?.date || !bookingDetails?.duration) {
+        throw new Error('Missing required booking information');
+      }
+  
+      // Validate coordinates
+      if (!bookingDetails.coordinates || 
+          typeof bookingDetails.coordinates.longitude !== 'number' || 
+          typeof bookingDetails.coordinates.latitude !== 'number') {
+        throw new Error('Invalid location coordinates. Please select a valid location.');
+      }
+  
+      const formattedDate = new Date(bookingDetails.date);
+      
+      // Structure location data properly
+      const locationData = {
+        type: 'Point',
+        coordinates: [
+          bookingDetails.coordinates.longitude,
+          bookingDetails.coordinates.latitude
+        ],
+        address: bookingDetails.location
+      };
+  
+      const totalPrice = selectedPackage.price * bookingDetails.duration;
+  
+      const payload = {
+        userId: localStorage.getItem('userId'),
+        cleanerId: selectedCleaner.id,
+        service: serviceData.name,
+        packageDetails: {
+          name: selectedPackage.name,
+          price: selectedPackage.price,
+          duration: bookingDetails.duration
+        },
+        date: formattedDate,
+        time: bookingDetails.time,
+        duration: bookingDetails.duration,
+        location: locationData,
+        totalPrice: totalPrice,
+        status: 'Pending'
+      };
+  
+      console.log("Sending payload:", payload);
+  
+      const token = localStorage.getItem('userToken');
+      const response = await fetch('http://localhost:8080/api/bookings/confirm', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      console.log("Response received:", response.status);
+  
+      const data = await response.json();
+      console.log("Response data:", data);
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create booking');
+      }
+  
+     // After receiving the booking response:
+const bookingId = data._id || data.booking?._id;
+if (!bookingId) {
+  throw new Error('No booking ID received from server');
+}
+
+// Store both the ID and totalPrice
+localStorage.setItem('bookingId', bookingId);
+localStorage.setItem('totalPrice', totalPrice.toString());
+
+// Add detailed logging to help with debugging
+console.log('Booking created with ID:', bookingId);
+console.log('Total price:', totalPrice);
+  
+      console.log("Booking successful, stored data:", {
+        bookingId: localStorage.getItem('bookingId'),
+        totalPrice: localStorage.getItem('totalPrice')
+      });
+  
+      toast.success('Booking created successfully');
+      setIsBookingSummaryOpen(false);
+      navigate('/payment');
+      return true;
+  
+    } catch (error) {
+      console.error('Error confirming booking:', error);
+      toast.error(error.message || 'Error creating booking. Please try again.');
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+  const handleProceedToCheckout = (packageDetails) => {
+    console.log("handleProceedToCheckout called with:", packageDetails);
+    setSelectedPackage(packageDetails);
+    setIsBookingSummaryOpen(true);
+  };
   return (
-    <div className="bg-gradient-to-b from-blue-50 to-white min-h-screen py-16 px-4 sm:px-6 lg:px-8">
-       <BackButton to="/commercial" /> 
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl text-center mb-8">
-          Office <span className="text-blue-600">Cleaning</span> Services
-        </h1>
-        <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto text-center mb-12">
-          Create a clean, healthy, and productive workspace for your employees and clients.
-        </p>
-        
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden lg:grid lg:grid-cols-2 lg:gap-4">
-          <div className="pt-10 pb-12 px-6 sm:pt-16 sm:px-16 lg:py-16 lg:pr-0 xl:py-20 xl:px-20">
-            <div className="lg:self-center">
-              <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                <span className="block">Boost productivity</span>
-                <span className="block text-blue-600">with a spotless office</span>
-              </h2>
-              <p className="mt-4 text-lg leading-6 text-gray-500">
-                Our professional office cleaning services ensure your workspace is always presentable, hygienic, and conducive to productivity. From daily maintenance to deep cleaning, we've got you covered.
-              </p>
-              <Link
-                to="./OfficeBooking"
-                className="mt-8 bg-blue-600 border border-transparent rounded-md shadow px-5 py-3 inline-flex items-center text-base font-medium text-white hover:bg-blue-700 transition-colors duration-150"
-              >
-                Schedule a Booking
-                <ArrowRight className="ml-2 -mr-1 h-5 w-5" aria-hidden="true" />
-              </Link>
-            </div>
-          </div>
-          <div className="pt-10 pb-12 px-6 sm:pt-16 sm:px-16 lg:py-16 lg:pr-0 xl:py-20 xl:px-20">
-            <ul className="space-y-4">
-              {services.map((service, index) => (
-                <li key={index} className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-6 w-6 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-base text-gray-700">{service}</p>
-                </li>
+    <div className="min-h-screen bg-[#f8f9ff]">
+      <BackButton to="/commercial" />
+      <div className="relative lg:h-[400px] flex items-center justify-center overflow-hidden">
+        <img
+          src={office}
+          alt="Office Cleaning"
+          className="mt-20 w-[800px] sm:w-[900px] lg:w-[1000px] object-contain"
+        />
+        <div className="absolute z-10 text-center px-8 max-w-4xl mt-2">
+          <p className="text-sm font-medium mb-3 text-white tracking-wide">We are</p>
+          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-wide leading-tight font-serif" style={{ fontFamily: 'Rische, serif' }}>
+            <span className="text-white">Office Cle</span>
+            <span className="text-black">anin</span>
+            <span className="text-white">g</span>
+          </h1>
+          <p className="text-lg sm:text-xl lg:text-2xl text-gray-200 pt-5 max-w-2xl mx-auto">
+            <span className="text-black">Expert</span> office cleaning <span className="text-black">services to m</span>aintain a pristine and produ<span className="text-black">ctive workpl</span>ace.
+          </p>
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-8">
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4].map((star) => (
+                <svg
+                  key={star}
+                  className="w-5 h-5 text-yellow-400"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
               ))}
-            </ul>
-          </div>
-        </div>
-        
-        <div className="mt-16 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="bg-blue-100 rounded-2xl p-8 text-center">
-            <Coffee className="h-12 w-12 text-blue-600 mx-auto mb-4" aria-hidden="true" />
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Breakroom Brilliance</h3>
-            <p className="text-gray-700">
-              Keep communal areas clean and inviting for employee comfort and satisfaction.
-            </p>
-          </div>
-          <div className="bg-green-100 rounded-2xl p-8 text-center">
-            <Monitor className="h-12 w-12 text-green-600 mx-auto mb-4" aria-hidden="true" />
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Workstation Wellness</h3>
-            <p className="text-gray-700">
-              Ensure individual workspaces are dust-free and sanitized for optimal health.
-            </p>
-          </div>
-          <div className="bg-yellow-100 rounded-2xl p-8 text-center">
-            <Users className="h-12 w-12 text-yellow-600 mx-auto mb-4" aria-hidden="true" />
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Reception Ready</h3>
-            <p className="text-gray-700">
-              Maintain a spotless reception area to impress clients and visitors.
-            </p>
-          </div>
-          <div className="bg-purple-100 rounded-2xl p-8 text-center">
-            <Clock className="h-12 w-12 text-purple-600 mx-auto mb-4" aria-hidden="true" />
-            <h3 className="text-xl font-bold text-gray-900 mb-4">24/7 Availability</h3>
-            <p className="text-gray-700">
-              Flexible scheduling to clean your office outside of business hours.
-            </p>
-          </div>
-        </div>
-        
-        <div className="mt-16 bg-gray-100 rounded-2xl p-8 md:p-12 lg:p-16">
-          <h3 className="text-2xl font-bold text-gray-900 mb-6">Why Choose Our Office Cleaning Service?</h3>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h4 className="text-xl font-semibold text-blue-800 mb-2">Experienced Professionals</h4>
-              <p className="text-gray-700">Our team is trained in the latest office cleaning techniques and technologies.</p>
-            </div>
-            <div>
-              <h4 className="text-xl font-semibold text-blue-800 mb-2">Customized Cleaning Plans</h4>
-              <p className="text-gray-700">We tailor our services to meet the unique needs of your office space and schedule.</p>
-            </div>
-            <div>
-              <h4 className="text-xl font-semibold text-blue-800 mb-2">Eco-Friendly Options</h4>
-              <p className="text-gray-700">We offer green cleaning solutions to promote a healthier environment.</p>
-            </div>
-            <div>
-              <h4 className="text-xl font-semibold text-blue-800 mb-2">Quality Assurance</h4>
-              <p className="text-gray-700">Regular inspections and feedback systems ensure consistent, high-quality results.</p>
+              <span className="text-sm text-black-300 ml-2">5000+ Client reviews</span>
             </div>
           </div>
         </div>
       </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <BookingForm
+            bookingDetails={bookingDetails}
+            setBookingDetails={setBookingDetails}
+            handleSearchCleaners={handleSearchCleaners}
+            gettingCurrentLocation={gettingCurrentLocation}
+            locationSuggestions={locationSuggestions}
+            handleLocationInput={handleLocationInput}
+            handleSelectLocation={handleSelectLocation}
+            getCurrentLocation={getCurrentLocation}
+            services={services}
+          />
+        </div>
+        {showMap && (
+          <div className="space-y-8">
+            <div>
+              <ServiceMap
+                cleaners={cleaners}
+                setCurrentCleaner={setCurrentCleaner}
+                setShowCleanerModal={setShowCleanerModal}
+              />
+            </div>
+            {selectedCleaner && (
+              <div>
+                <BookingDetails
+                  selectedCleaner={selectedCleaner}
+                  service={serviceData}
+                  bookingDetails={bookingDetails}
+                  onChangeCleaner={handleChangeCleaner}
+                  packageDescriptions={packageDescriptions}
+                  onProceed={handleProceedToCheckout}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      <CleanerModal
+        cleaner={currentCleaner}
+        isOpen={showCleanerModal}
+        onClose={() => setShowCleanerModal(false)}
+        onSelect={handleCleanerSelect}
+        isSelected={selectedCleaner?.id === currentCleaner?.id}
+      />
+       {isBookingSummaryOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
+          <BookingSummaryModal
+            onPaymentClick={handleConfirmBooking} // Ensure this is passed correctly
+            selectedCleaner={selectedCleaner}
+            service={serviceData}
+            bookingDetails={bookingDetails}
+            selectedPackage={selectedPackage}
+            onEdit={() => setIsBookingSummaryOpen(false)}
+            isSubmitting={isSubmitting}
+            onClose={() => setIsBookingSummaryOpen(false)}
+          />
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default OfficeCleaning;

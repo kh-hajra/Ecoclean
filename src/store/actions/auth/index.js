@@ -14,7 +14,7 @@ import {
   SIGNUP_REQUEST,
   SIGNUP_FAIL,
   SIGNUP_SUCCESS,
-
+  LOGOUT_REQUEST,
   FORGOT_PASSWORD_VERIFY_OTP_REQUEST_AUTH,
   WALLET_SEEN_REQUEST,
 } from "../../actionTypes";
@@ -31,8 +31,50 @@ import {
   forgotPasswordVerifyOtp,
   walletSeen,
 } from "../../../services/auth.service.js";
+import { clearCleanerState } from "../../reducers/cleaner/index.js";
+import { 
+  setUser, 
+  clearUserState // Import clearUserState instead of logoutUser
+} from "../../reducers/user/index.js";
 
-import { setUser } from "../../reducers/user/index";
+
+import { resetStates } from "../../reducers/auth/index.js";
+
+export const logoutUserThunk = createAsyncThunk(
+  "LOGOUT_REQUEST",
+  async (_, thunkAPI) => {
+    try {
+      // Call the logout service
+      const response = await logout();
+      
+      // Clear all Redux states
+      thunkAPI.dispatch(clearUserState());
+      thunkAPI.dispatch(clearCleanerState());
+      thunkAPI.dispatch(resetStates());
+      
+      // Clear all relevant localStorage items
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userToken');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('cleanerId');
+      localStorage.removeItem('username');
+      localStorage.removeItem('cleanerToken');
+      
+      return response?.data;
+    } catch (error) {
+      console.error("Logout failed:", error);
+      
+      // Even if the API call fails, clear the state
+      thunkAPI.dispatch(clearUserState());
+      thunkAPI.dispatch(clearCleanerState());
+      thunkAPI.dispatch(resetStates());
+      
+      localStorage.clear(); // Clear all localStorage as a fallback
+      
+      return thunkAPI.rejectWithValue(error?.response?.data?.message || "Logout failed");
+    }
+  }
+);
 export const loginUser = createAsyncThunk(
   LOGIN_REQUEST,
   async (credentials, thunkAPI) => {
@@ -40,7 +82,10 @@ export const loginUser = createAsyncThunk(
     try {
       
       const response = await login(credentials);
-
+      // Store the token in localStorage if the user is a cleaner
+      if (response.data.role === "cleaner") {
+        localStorage.setItem("cleanerToken", response.data.accessToken);
+      }
       thunkAPI.dispatch(
         setUser({
           ...credentials
@@ -61,31 +106,8 @@ export const loginUser = createAsyncThunk(
 );
 // Google Signup
 
-export const logoutUser = createAsyncThunk(
-  "LOGOUT_REQUEST", // Define your logout action type
-  async (_, thunkAPI) => {
-    try {
-      // Call the logout service
-      const response = await logout();
 
-      // Reset user state in Redux store
-      thunkAPI.dispatch(
-        setUser({
-          accessToken: null,
-          email: null,
-          name: null,
-          privateKey: null,
-          publicKey: null,
-        })
-      );
 
-      return response.data;
-    } catch (error) {
-      console.error("Logout failed:", error);
-      return thunkAPI.rejectWithValue(error.response.data.message);
-    }
-  }
-);
 export const googleSignupUser = createAsyncThunk(
   "GOOGLE_SIGNUP_REQUEST", // Define a unique action type
   async (token, thunkAPI) => {
@@ -150,6 +172,9 @@ export const registerCleaner = createAsyncThunk(
     try {
       const response = await cleanerService.registerCleaner(cleanerData);
       console.log(response.data)
+      if (response.data.data?.token) {
+        localStorage.setItem("cleanerToken", response.data.data.token);
+      }
       return response.data;
     } catch (error) {
       return rejectWithValue(error.message);

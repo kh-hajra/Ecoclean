@@ -1,9 +1,268 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { CheckCircle, ArrowRight, Truck, Recycle, Clock, Shield } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { CheckCircle, ArrowRight, MapPin, Calendar, Clock, MapPinIcon } from "lucide-react";
 import BackButton from '../components/ui/BackButton';
-function StreetCleaning() {
-  const services = [
+import CleanerModal from './CleanerModal';
+import BookingDetails from './BookingDetail';
+import street from "../assets/images/street2.png";
+import BookingForm from '../components/BookingForm';
+import ServiceMap from '../components/ServiceMap';
+import { toast } from 'react-toastify';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import BookingSummaryModal from './BookingSummaryModal';
+import { useNavigate } from 'react-router-dom';
+mapboxgl.accessToken = 'pk.eyJ1Ijoia2gtaGFqcmEiLCJhIjoiY202M2N4dHI0MTcyaDJqc28yMnNrZG02byJ9.jUssFJPm7xaP0qGAttJxzg';
+
+const packageDescriptions = {
+  basic: "Basic  cleaning ",
+  standard: "Comprehensive cleaning ",
+  premium: "Deep cleaning with sanitization and grout cleaning",
+};
+const ResidentailExteriorCleaning = () => {
+  const [serviceData, setServiceData] = useState(null);
+  const [bookingDetails, setBookingDetails] = useState({
+    date: '',
+    time: '',
+    location: '',
+  });
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [cleaners, setCleaners] = useState([]);
+  const [showMap, setShowMap] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [gettingCurrentLocation, setGettingCurrentLocation] = useState(false);
+  const [selectedCleaner, setSelectedCleaner] = useState(null);
+  const [selectedMarker, setSelectedMarker] = useState(null);
+  const [showCleanerModal, setShowCleanerModal] = useState(false);
+  const [currentCleaner, setCurrentCleaner] = useState(null);
+  const [popupZIndex, setPopupZIndex] = useState({});
+  const popupRefs = useRef({});
+ const [isBookingSummaryOpen, setIsBookingSummaryOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const [bookingId, setBookingId] = useState(null);
+  useEffect(() => {
+    const fetchServiceDetails = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/services/residential-exterior-cleaning');
+        if (!response.ok) throw new Error('Failed to fetch service details');
+        const data = await response.json();
+        setServiceData(data.data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchServiceDetails();
+  }, []);
+
+  const handleCleanerSelect = (cleaner) => {
+    setSelectedCleaner(cleaner.id === selectedCleaner?.id ? null : cleaner);
+    setShowCleanerModal(false);
+  };
+
+  const handleChangeCleaner = () => {
+    setSelectedCleaner(null);
+  };
+
+  const handleLocationInput = async (e) => {
+    const value = e.target.value;
+    console.log('Input value:', value);
+    setBookingDetails(prev => ({ ...prev, location: value }));
+  
+    if (value.length > 2) {
+      try {
+        const searchText = encodeURIComponent(value.trim());
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${searchText}.json`;
+  
+        // Enhanced parameters for more detailed results
+        const params = new URLSearchParams({
+          access_token: mapboxgl.accessToken,
+          country: 'PK', // Limit to Pakistan
+          types: 'address,poi,neighborhood,locality,place', // Include more specific types
+          limit: '10', // Increase the number of results
+          language: 'en', // Set language to English
+          proximity: bookingDetails.coordinates ? 
+            `${bookingDetails.coordinates.longitude},${bookingDetails.coordinates.latitude}` : 
+            '74.3587,31.5204', // Default to Lahore coordinates
+          autocomplete: 'true', // Enable autocomplete
+          fuzzyMatch: 'true', // Enable fuzzy matching
+        });
+  
+        const response = await fetch(`${url}?${params}`);
+  
+        if (!response.ok) {
+          throw new Error(`Geocoding failed: ${response.status}`);
+        }
+  
+        const data = await response.json();
+  
+        if (data.features) {
+          const suggestions = data.features.map(feature => {
+            // Extract context information
+            const contextParts = feature.context || [];
+            const neighborhood = contextParts.find(c => c.id.startsWith('neighborhood'))?.text;
+            const locality = contextParts.find(c => c.id.startsWith('locality'))?.text;
+            const place = contextParts.find(c => c.id.startsWith('place'))?.text;
+  
+            // Create a more detailed place description
+            const mainText = feature.text;
+            let secondaryText = [
+              neighborhood,
+              locality,
+              place,
+              feature.properties?.address,
+              feature.context?.map(c => c.text).join(', ')
+            ]
+              .filter(Boolean)
+              .join(', ')
+              .replace(/,\s*,/g, ',')
+              .replace(/^,\s*/, '')
+              .replace(/\s*,\s*$/, '');
+  
+            // Remove redundant information
+            secondaryText = secondaryText.replace(new RegExp(`^${mainText},\\s*`), '');
+  
+            return {
+              place_name: feature.place_name,
+              main_text: mainText,
+              secondary_text: secondaryText,
+              coordinates: {
+                longitude: feature.center[0],
+                latitude: feature.center[1]
+              },
+              // Add additional metadata for better display
+              type: feature.place_type[0],
+              relevance: feature.relevance,
+              properties: feature.properties
+            };
+          })
+          // Sort by relevance
+          .sort((a, b) => b.relevance - a.relevance)
+          // Filter out duplicate places
+          .filter((suggestion, index, self) => 
+            index === self.findIndex(s => s.place_name === suggestion.place_name)
+          );
+  
+          setLocationSuggestions(suggestions);
+        }
+      } catch (err) {
+        console.error('Error in handleLocationInput:', err);
+        toast.error('Unable to fetch location suggestions. Please try again.');
+        setLocationSuggestions([]);
+      }
+    } else {
+      setLocationSuggestions([]);
+    }
+  };
+  
+  const handleSelectLocation = (suggestion) => {
+    if (!suggestion) return;
+  
+    setBookingDetails(prev => ({
+      ...prev,
+      location: suggestion.place_name,
+      coordinates: {
+        longitude: suggestion.coordinates.longitude,
+        latitude: suggestion.coordinates.latitude
+      }
+    }));
+  
+    setLocationSuggestions([]);
+  };
+   
+  const getCurrentLocation = () => {
+    setGettingCurrentLocation(true);
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${mapboxgl.accessToken}`
+          );
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch location details');
+          }
+          
+          const data = await response.json();
+          if (data.features && data.features.length > 0) {
+            setBookingDetails(prev => ({
+              ...prev,
+              location: data.features[0].place_name,
+              coordinates: {
+                longitude: longitude,
+                latitude: latitude
+              }
+            }));
+          }
+        } catch (error) {
+          console.error('Error getting location:', error);
+          toast.error('Error getting your location. Please try entering it manually.');
+        } finally {
+          setGettingCurrentLocation(false);
+        }
+      }, (error) => {
+        console.error('Geolocation error:', error);
+        toast.error('Unable to get your location. Please try entering it manually.');
+        setGettingCurrentLocation(false);
+      });
+    } else {
+      toast.error('Geolocation is not supported by your browser');
+      setGettingCurrentLocation(false);
+    }
+  };
+ 
+  const handleSearchCleaners = async () => {
+    if (bookingDetails.date && bookingDetails.time && bookingDetails.location) {
+      try {
+        const queryParams = new URLSearchParams({
+          location: bookingDetails.location,
+          specialization: "Outdoor",
+          service: "Residential Exterior Cleaning",
+          date: bookingDetails.date,
+          time: bookingDetails.time,
+        }).toString();
+
+        const response = await fetch(
+          `http://localhost:8080/api/cleaners/nearby?${queryParams}`,
+          {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch cleaners');
+        }
+
+        const data = await response.json();
+
+        if (data.cleaners && Array.isArray(data.cleaners) && data.cleaners.length > 0) {
+          setCleaners(data.cleaners);
+          setShowMap(true);
+        } else {
+          alert('No cleaners found matching your criteria.');
+          setCleaners([]);
+        }
+      } catch (error) {
+        console.error('Error fetching cleaners:', error);
+        alert(error.message || 'Error loading cleaners. Please try again.');
+      }
+    } else {
+      alert('Please fill all booking details!');
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  const services = serviceData?.features || [
     "Mechanical sweeping of streets and roads",
     "Litter and debris removal",
     "Gutter and curb cleaning",
@@ -13,106 +272,228 @@ function StreetCleaning() {
     "Snow and ice removal (seasonal)",
     "Special event clean-up",
   ];
+  const handleConfirmBooking = async () => {
+     console.log("handleConfirmBooking started");
+     setIsSubmitting(true);
+     
+     try {
+       // Validate required data
+       if (!selectedCleaner?.id || !selectedPackage?.price || !bookingDetails?.date || !bookingDetails?.duration) {
+         throw new Error('Missing required booking information');
+       }
+   
+       // Validate coordinates
+       if (!bookingDetails.coordinates || 
+           typeof bookingDetails.coordinates.longitude !== 'number' || 
+           typeof bookingDetails.coordinates.latitude !== 'number') {
+         throw new Error('Invalid location coordinates. Please select a valid location.');
+       }
+   
+       const formattedDate = new Date(bookingDetails.date);
+       
+       // Structure location data properly
+       const locationData = {
+         type: 'Point',
+         coordinates: [
+           bookingDetails.coordinates.longitude,
+           bookingDetails.coordinates.latitude
+         ],
+         address: bookingDetails.location
+       };
+   
+       const totalPrice = selectedPackage.price * bookingDetails.duration;
+   
+       const payload = {
+         userId: localStorage.getItem('userId'),
+         cleanerId: selectedCleaner.id,
+         service: serviceData.name,
+         packageDetails: {
+           name: selectedPackage.name,
+           price: selectedPackage.price,
+           duration: bookingDetails.duration
+         },
+         date: formattedDate,
+         time: bookingDetails.time,
+         duration: bookingDetails.duration,
+         location: locationData,
+         totalPrice: totalPrice,
+         status: 'Pending'
+       };
+   
+       console.log("Sending payload:", payload);
+   
+       const token = localStorage.getItem('userToken');
+       const response = await fetch('http://localhost:8080/api/bookings/confirm', {
+         method: 'POST',
+         headers: { 
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${token}`,
+         },
+         body: JSON.stringify(payload),
+       });
+   
+       console.log("Response received:", response.status);
+   
+       const data = await response.json();
+       console.log("Response data:", data);
+       
+       if (!response.ok) {
+         throw new Error(data.message || 'Failed to create booking');
+       }
+   
+      // After receiving the booking response:
+ const bookingId = data._id || data.booking?._id;
+ if (!bookingId) {
+   throw new Error('No booking ID received from server');
+ }
+ 
+ // Store both the ID and totalPrice
+ localStorage.setItem('bookingId', bookingId);
+ localStorage.setItem('totalPrice', totalPrice.toString());
+ 
+ // Add detailed logging to help with debugging
+ console.log('Booking created with ID:', bookingId);
+ console.log('Total price:', totalPrice);
+   
+       console.log("Booking successful, stored data:", {
+         bookingId: localStorage.getItem('bookingId'),
+         totalPrice: localStorage.getItem('totalPrice')
+       });
+   
+       toast.success('Booking created successfully');
+       setIsBookingSummaryOpen(false);
+       navigate('/payment');
+       return true;
+   
+     } catch (error) {
+       console.error('Error confirming booking:', error);
+       toast.error(error.message || 'Error creating booking. Please try again.');
+       return false;
+     } finally {
+       setIsSubmitting(false);
+     }
+   };
+  
+    const handleProceedToCheckout = (packageDetails) => {
+      console.log("handleProceedToCheckout called with:", packageDetails);
+      setSelectedPackage(packageDetails);
+      setIsBookingSummaryOpen(true);
+    };
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-white min-h-screen py-16 px-4 sm:px-6 lg:px-8">
-       <BackButton to="/outdoor" /> 
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl text-center mb-8">
-          Exterior <span className="text-green-600">Cleaning</span> Services
-        </h1>
-        <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto text-center mb-12">
-          Keep your community streets clean, safe, and beautiful with our professional  cleaning solutions.
-        </p>
-        
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden lg:grid lg:grid-cols-2 lg:gap-4">
-          <div className="pt-10 pb-12 px-6 sm:pt-16 sm:px-16 lg:py-16 lg:pr-0 xl:py-20 xl:px-20">
-            <div className="lg:self-center">
-              <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                <span className="block">Clean streets,</span>
-                <span className="block text-green-600">happy communities</span>
-              </h2>
-              <p className="mt-4 text-lg leading-6 text-gray-500">
-                Our  cleaning services are designed to maintain the cleanliness and safety of your community's roads and public spaces. From regular sweeping to specialized cleaning, we ensure your streets stay in top condition year-round.
-              </p>
-              <Link
-                to="./ResidentialExteriorBooking"
-                className="mt-8 bg-green-600 border border-transparent rounded-md shadow px-5 py-3 inline-flex items-center text-base font-medium text-white hover:bg-green-700 transition-colors duration-150"
-              >
-                Schedule Exterior Cleaning
-                <ArrowRight className="ml-2 -mr-1 h-5 w-5" aria-hidden="true" />
-              </Link>
-            </div>
-          </div>
-          <div className="pt-10 pb-12 px-6 sm:pt-16 sm:px-16 lg:py-16 lg:pr-0 xl:py-20 xl:px-20">
-            <ul className="space-y-4">
-              {services.map((service, index) => (
-                <li key={index} className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-6 w-6 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-base text-gray-700">{service}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        
-        <div className="mt-16 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="bg-blue-100 rounded-2xl p-8 text-center">
-            <Truck className="h-12 w-12 text-blue-600 mx-auto mb-4" aria-hidden="true" />
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Advanced Equipment</h3>
-            <p className="text-gray-700">
-              We use state-of-the-art street sweepers and cleaning equipment for efficient and thorough cleaning.
-            </p>
-          </div>
-          <div className="bg-green-100 rounded-2xl p-8 text-center">
-            <Recycle className="h-12 w-12 text-green-600 mx-auto mb-4" aria-hidden="true" />
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Eco-Friendly Practices</h3>
-            <p className="text-gray-700">
-              Our cleaning methods prioritize environmental sustainability and responsible waste management.
-            </p>
-          </div>
-          <div className="bg-yellow-100 rounded-2xl p-8 text-center">
-            <Clock className="h-12 w-12 text-yellow-600 mx-auto mb-4" aria-hidden="true" />
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Flexible Scheduling</h3>
-            <p className="text-gray-700">
-              We offer 24/7 services to minimize disruption to traffic and community activities.
-            </p>
-          </div>
-          <div className="bg-red-100 rounded-2xl p-8 text-center">
-            <Shield className="h-12 w-12 text-red-600 mx-auto mb-4" aria-hidden="true" />
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Safety First</h3>
-            <p className="text-gray-700">
-              Our team follows strict safety protocols to ensure the well-being of our workers and the public.
-            </p>
-          </div>
-        </div>
-        
-        <div className="mt-16 bg-gray-100 rounded-2xl p-8 md:p-12 lg:p-16">
-          <h3 className="text-2xl font-bold text-gray-900 mb-6">Why Choose Our Street Cleaning Service?</h3>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h4 className="text-xl font-semibold text-green-800 mb-2">Experienced Team</h4>
-              <p className="text-gray-700">Our skilled professionals have years of experience in municipal cleaning services.</p>
-            </div>
-            <div>
-              <h4 className="text-xl font-semibold text-green-800 mb-2">Customized Cleaning Plans</h4>
-              <p className="text-gray-700">We tailor our services to meet the specific needs of your community or municipality.</p>
-            </div>
-            <div>
-              <h4 className="text-xl font-semibold text-green-800 mb-2">Comprehensive Solutions</h4>
-              <p className="text-gray-700">From routine maintenance to specialized cleaning, we offer a full range of street cleaning services.</p>
-            </div>
-            <div>
-              <h4 className="text-xl font-semibold text-green-800 mb-2">Reliable and Consistent</h4>
-              <p className="text-gray-700">Count on us for dependable, high-quality cleaning services that keep your streets consistently clean.</p>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#f8f9ff]">
+    <BackButton to="/outdoor" />
+    <div className="relative  lg:h-[400px] flex items-center justify-center overflow-hidden">
+  {/* Image */}
+  <img
+      src={street}
+      alt="Street Cleaning"
+      className=" mt-20 w-[800px] sm:w-[900px] lg:w-[1000px] object-contain"
+    />
+
+  {/* Text Content */}
+  <div className="absolute z-10 text-center max-w-7xl mt-2">
+  <p className="text-sm font-medium mb-3 text-white tracking-wide">We are</p>
+  <h1 className="text-5xl sm:text-6xl lg:text-8xl font-bold tracking-tight leading-tight font-serif whitespace-nowrap" 
+    style={{ fontFamily: 'Rische, serif' }}>
+  <span className="text-black">Res</span>
+  <span className="text-white">idential Exterio</span>
+  <span className="text-black">r</span>
+  <span className="text-white"> Clean</span>
+  <span className="text-black">ing</span>
+</h1>
+  <p className="text-lg sm:text-xl lg:text-2xl text-gray-200 pt-5 max-w-2xl mx-auto">
+  <span className="text-black">Tran</span>sforming homes wi<span className="text-black">th professio</span>nal  exterior cleaning services, ma<span className="text-black">king every ho</span>use shine.
+  </p>
+
+    {/* Ratings */}
+    <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-8">
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4].map((star) => (
+          <svg
+            key={star}
+            className="w-5 h-5 text-yellow-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+        <span className="text-sm text-black-300 ml-2">5000+ Client reviews</span>
       </div>
     </div>
-  );
-}
+  </div>
+</div>
 
-export default StreetCleaning;
+      {/* Main Container for Booking Form, Map, and Pricing */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Booking Form Section */}
+        <div className="mb-8">
+          <BookingForm
+            bookingDetails={bookingDetails}
+            setBookingDetails={setBookingDetails}
+            handleSearchCleaners={handleSearchCleaners}
+            gettingCurrentLocation={gettingCurrentLocation}
+            locationSuggestions={locationSuggestions}
+            handleLocationInput={handleLocationInput}
+            handleSelectLocation={handleSelectLocation}
+            getCurrentLocation={getCurrentLocation}
+            services={services}
+          />
+        </div>
+
+        {/* Map and Pricing Section */}
+        {showMap && (
+          <div className="space-y-8">
+            {/* Map Section */}
+            <div>
+              <ServiceMap
+                cleaners={cleaners}
+                setCurrentCleaner={setCurrentCleaner}
+                setShowCleanerModal={setShowCleanerModal}
+              />
+            </div>
+
+            {/* Pricing Section */}
+            {selectedCleaner && (
+              <div>
+                <BookingDetails
+                  selectedCleaner={selectedCleaner}
+                  service={serviceData}
+                  bookingDetails={bookingDetails}
+                  onChangeCleaner={handleChangeCleaner}
+                  packageDescriptions={packageDescriptions}
+                  onProceed={handleProceedToCheckout}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <CleanerModal
+        cleaner={currentCleaner}
+        isOpen={showCleanerModal}
+        onClose={() => setShowCleanerModal(false)}
+        onSelect={handleCleanerSelect}
+        isSelected={selectedCleaner?.id === currentCleaner?.id}
+      />
+       {isBookingSummaryOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
+          <BookingSummaryModal
+            onPaymentClick={handleConfirmBooking} // Ensure this is passed correctly
+            selectedCleaner={selectedCleaner}
+            service={serviceData}
+            bookingDetails={bookingDetails}
+            selectedPackage={selectedPackage}
+            onEdit={() => setIsBookingSummaryOpen(false)}
+            isSubmitting={isSubmitting}
+            onClose={() => setIsBookingSummaryOpen(false)}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ResidentailExteriorCleaning;

@@ -6,23 +6,30 @@ import { Home, Sparkles, Clock, ArrowRight } from 'lucide-react';
 import BackButton from '../components/ui/BackButton';
 const residentialCleaningServices = [
   {
-    id: 'custom-cleaning',
-    title: 'Custom Cleaning',
+    id: 'bedroom-cleaning',
+    title: 'Bedroom Cleaning',
     description: 'Tailored cleaning solutions to meet your specific needs and preferences.',
     icon: Home,
     color: 'bg-blue-100',
   },
   {
-    id: 'standard-cleaning',
-    title: 'Standard Cleaning',
+    id: 'bathroom-cleaning',
+    title: 'Bathroom Cleaning',
     description: 'Our comprehensive regular cleaning service to keep your home fresh and tidy.',
     icon: Sparkles,
     color: 'bg-green-100',
   },
   {
-    id: 'deep-cleaning',
-    title: 'Deep Cleaning',
+    id: 'livingroom-cleaning',
+    title: 'LivingRoom Cleaning',
     description: 'Thorough, intensive cleaning for a spotless and rejuvenated living space.',
+    icon: Clock,
+    color: 'bg-yellow-100',
+  },
+  {
+    id: 'kitchen-cleaning',
+    title: 'Kitchen Cleaning',
+    description: 'Thorough, intensive cleaning for a spotless and rejuvenated kitchen space.',
     icon: Clock,
     color: 'bg-yellow-100',
   },

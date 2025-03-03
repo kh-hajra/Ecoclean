@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit";
-import * as authActions from "../../actions/auth";
 
 const initialState = {
   isLoggedIn: false,
@@ -33,7 +32,7 @@ const authSlice = createSlice({
       state.loginError = action.payload;
     },
     resetStates: (state) => {
-      Object.assign(state, initialState); // Reset to initial state
+      return initialState; // Return a fresh copy of initialState
     },
     setLoginState: (state, action) => {
       const { loginError, isLoggedIn, loading } = action.payload;
@@ -41,12 +40,21 @@ const authSlice = createSlice({
       state.isLoggedIn = isLoggedIn;
       state.loading = loading;
     },
+    logout: (state) => {
+      return initialState; // Return a fresh copy of initialState
+    }
   },
-
-  
+  extraReducers: (builder) => {
+    // Configure in separate file to avoid circular dependencies
+  }
 });
 
-export const { setIsLogin, setLoginError, resetStates, setLoginState } =
-  authSlice.actions;
+export const {
+  setIsLogin,
+  setLoginError,
+  resetStates,
+  setLoginState,
+  logout
+} = authSlice.actions;
 
 export default authSlice.reducer;

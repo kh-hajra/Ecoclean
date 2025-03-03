@@ -10,7 +10,17 @@ import { GoogleOAuthProvider } from "@react-oauth/google"; // Import GoogleOAuth
 import "react-toastify/dist/ReactToastify.css";
 
 const CLIENT_ID = "937974146084-sua70s8lv3nc5r4pa0tfjrl2l86njh90.apps.googleusercontent.com"; // Replace with your actual Google client ID
-
+// Register the service worker
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/firebase-messaging-sw.js") // Path to your service worker file
+    .then((registration) => {
+      console.log("Service Worker registered with scope:", registration.scope);
+    })
+    .catch((error) => {
+      console.error("Service Worker registration failed:", error);
+    });
+}
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

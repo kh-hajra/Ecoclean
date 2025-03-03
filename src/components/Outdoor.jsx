@@ -18,8 +18,8 @@ const outdoorServices = [
     color: 'bg-blue-100',
   },
   {
-    id: 'commercial-exterior',
-    title: 'Commercial Exterior Cleaning',
+    id: 'sewage-cleaning',
+    title: 'Sewage Cleaning',
     description: 'Maintain a professional appearance for your business with our commercial exterior cleaning services.',
     icon: Building,
     color: 'bg-green-100',

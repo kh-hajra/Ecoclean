@@ -1,26 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle, ArrowRight, MapPin, Calendar, Clock, MapPinIcon } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import BackButton from '../components/ui/BackButton';
 import CleanerModal from './CleanerModal';
 import BookingDetails from './BookingDetail';
-import specialty from "../assets/images/street2.png"; // Replace with your image path
-import ServiceHeader from '../components/ServiceHeader';
 import BookingForm from '../components/BookingForm';
 import ServiceMap from '../components/ServiceMap';
+import bedroomCleaningImage from "../assets/images/street2.png";
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { toast } from 'react-toastify';
 import BookingSummaryModal from './BookingSummaryModal';
-import { useNavigate } from 'react-router-dom';
 mapboxgl.accessToken = 'pk.eyJ1Ijoia2gtaGFqcmEiLCJhIjoiY202M2N4dHI0MTcyaDJqc28yMnNrZG02byJ9.jUssFJPm7xaP0qGAttJxzg';
 
+
 const packageDescriptions = {
-  basic: "Targeted cleaning for specialized areas.",
-  standard: "Advanced cleaning for commercial spaces.",
-  premium: "High-end cleaning for unique industry needs.",
+  basic: "Basic bedroom cleaning including dusting and vacuuming",
+  standard: "Comprehensive cleaning including bed making and furniture cleaning",
+  premium: "Deep cleaning with sanitization and upholstery cleaning",
 };
 
-const CommercialSpecialtyCleaning = () => {
+const BedroomCleaning = () => {
   const navigate = useNavigate();
   const [serviceData, setServiceData] = useState(null);
   const [bookingDetails, setBookingDetails] = useState({
@@ -35,11 +34,8 @@ const CommercialSpecialtyCleaning = () => {
   const [error, setError] = useState(null);
   const [gettingCurrentLocation, setGettingCurrentLocation] = useState(false);
   const [selectedCleaner, setSelectedCleaner] = useState(null);
-  const [selectedMarker, setSelectedMarker] = useState(null);
   const [showCleanerModal, setShowCleanerModal] = useState(false);
   const [currentCleaner, setCurrentCleaner] = useState(null);
-  const [popupZIndex, setPopupZIndex] = useState({});
-  const popupRefs = useRef({});
  const [isBookingSummaryOpen, setIsBookingSummaryOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
 
@@ -49,7 +45,7 @@ const CommercialSpecialtyCleaning = () => {
   useEffect(() => {
     const fetchServiceDetails = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/services/commercial-specialty-cleaning');
+        const response = await fetch('http://localhost:8080/api/services/bedroom-cleaning');
         if (!response.ok) throw new Error('Failed to fetch service details');
         const data = await response.json();
         setServiceData(data.data);
@@ -220,14 +216,13 @@ const CommercialSpecialtyCleaning = () => {
     }
   };
  
-
   const handleSearchCleaners = async () => {
     if (bookingDetails.date && bookingDetails.time && bookingDetails.location) {
       try {
         const queryParams = new URLSearchParams({
           location: bookingDetails.location,
-          specialization: "Commercial",
-          service: "Commercial Specialty Cleaning",
+          specialization: "Residential",
+          service: "Bedroom Cleaning",
           date: bookingDetails.date,
           time: bookingDetails.time,
         }).toString();
@@ -267,14 +262,12 @@ const CommercialSpecialtyCleaning = () => {
   if (error) return <div>Error: {error}</div>;
 
   const services = serviceData?.features || [
-    "High-rise window cleaning",
-    "Carpet and upholstery cleaning",
-    "Pressure washing",
-    "Graffiti removal",
-    "Post-construction cleaning",
-    "Disinfection services",
-    "Special event clean-up",
-    "Custom cleaning solutions",
+    "Dusting and vacuuming",
+    "Bed making",
+    "Furniture cleaning",
+    "Closet organization",
+    "Floor mopping and sanitization",
+    "Trash removal",
   ];
  const handleConfirmBooking = async () => {
     console.log("handleConfirmBooking started");
@@ -377,7 +370,6 @@ console.log('Total price:', totalPrice);
       setIsSubmitting(false);
     }
   };
-
   const handleProceedToCheckout = (packageDetails) => {
     console.log("handleProceedToCheckout called with:", packageDetails);
     setSelectedPackage(packageDetails);
@@ -385,45 +377,13 @@ console.log('Total price:', totalPrice);
   };
   return (
     <div className="min-h-screen bg-[#f8f9ff]">
-      <BackButton to="/commercial" />
+      <BackButton to="/residential" />
       <div className="relative lg:h-[400px] flex items-center justify-center overflow-hidden">
         <img
-          src={specialty}
-          alt="Commercial Specialty Cleaning"
+          src={bedroomCleaningImage}
+          alt="Bedroom Cleaning"
           className="mt-20 w-[800px] sm:w-[900px] lg:w-[1000px] object-contain"
         />
-        <div className="absolute z-10 text-center px-8 max-w-4xl mt-2">
-          <p className="text-sm font-medium mb-3 text-white tracking-wide">We are</p>
-          <h1
-  className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-wide leading-tight font-serif whitespace-nowrap"
-  style={{ fontFamily: 'Rische, serif' }}
->
-  <span className="text-white">Specialized </span>
-  <span className="text-black">Cle</span>
-  <span className="text-white">ani</span>
-  <span className="text-black">ng</span>
-
-</h1>
-
-          <p className="text-lg sm:text-xl lg:text-2xl text-gray-200 pt-5 max-w-2xl mx-auto">
-            <span className="text-black">Tailored </span>cleaning solutions <span className="text-black">for unique </span>commercial spaces and  <span className="text-black">requirements</span>
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-8">
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4].map((star) => (
-                <svg
-                  key={star}
-                  className="w-5 h-5 text-yellow-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
-              <span className="text-sm text-black-300 ml-2">5000+ Client reviews</span>
-            </div>
-          </div>
-        </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
@@ -441,13 +401,11 @@ console.log('Total price:', totalPrice);
         </div>
         {showMap && (
           <div className="space-y-8">
-            <div>
-              <ServiceMap
-                cleaners={cleaners}
-                setCurrentCleaner={setCurrentCleaner}
-                setShowCleanerModal={setShowCleanerModal}
-              />
-            </div>
+            <ServiceMap
+              cleaners={cleaners}
+              setCurrentCleaner={setCurrentCleaner}
+              setShowCleanerModal={setShowCleanerModal}
+            />
             {selectedCleaner && (
               <div>
                 <BookingDetails
@@ -488,4 +446,4 @@ console.log('Total price:', totalPrice);
   );
 };
 
-export default CommercialSpecialtyCleaning;
+export default BedroomCleaning;

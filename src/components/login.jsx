@@ -1,17 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, LogIn, ArrowLeft } from 'lucide-react';
 import Button from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Checkbox } from "./ui/checkbox";
 import logo from '../assets/images/logo.svg';
 import useLogin from '../hooks/useLogin';
+import { useSelector } from 'react-redux';
 
 const Login = () => {
   const navigate = useNavigate();
   const { register, handleSubmit, errors, onSubmit, loginError, showError, setShowError } = useLogin();
   const [showPassword, setShowPassword] = useState(false);
+
+  // Add this to check if the user is already authenticated
+  const isAuthenticated = useSelector((state) => 
+    state.user.isAuthenticated || state.cleaner.isAuthenticated
+  );
+
+  // Redirect authenticated users to the home page
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10 flex flex-col">
@@ -82,7 +94,6 @@ const Login = () => {
                 <div className="mt-1 relative">
                   <Lock className="absolute top-3 left-3 h-5 w-5 text-muted-foreground" aria-hidden="true" />
                   <Input
-                
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
@@ -105,11 +116,6 @@ const Login = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              {/* <Checkbox id="remember-me" /> */}
-              {/* <Label htmlFor="remember-me" className="ml-2 text-sm text-muted-foreground">
-                Remember me
-              </Label> */}
-             
               <Link to="/forgot-password" className="text-sm font-medium text-primary hover:text-primary/80">
                 Forgot your password?
               </Link>

@@ -3,17 +3,32 @@ import { Star, Phone, Award, Calendar, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import Button from '../components/ui/button';
 import { ScrollArea } from '../components/ui/scroll-area';
-
 const CleanerModal = ({ cleaner, isOpen, onClose, onSelect, isSelected }) => {
   if (!cleaner) return null;
 
+  console.log("Cleaner object:", cleaner); // Debugging: Log the cleaner object
+
+  const renderStars = (rating) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <Star
+          key={i}
+          className={`w-5 h-5 ${
+            i <= rating ? 'text-yellow-500 fill-current' : 'text-gray-300'
+          }`}
+        />
+      );
+    }
+    return stars;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] bg-white shadow-lg rounded-full border-[#4338E0]"  style={{
-      boxShadow: "0px 10px 15px rgba(67, 56, 224, 0.2)", // Custom drop shadow
-    }}>
+      <DialogContent className="sm:max-w-[500px] bg-white shadow-lg rounded-full border-[#4338E0]" style={{
+        boxShadow: "0px 10px 15px rgba(67, 56, 224, 0.2)", // Custom drop shadow
+      }}>
         <DialogHeader>
-           
           <div className="flex items-center gap-3 border-b pb-2 mb-2">
             <img 
               src={cleaner.profileImage} 
@@ -24,9 +39,11 @@ const CleanerModal = ({ cleaner, isOpen, onClose, onSelect, isSelected }) => {
               <DialogTitle className="text-2xl font-semibold text-gray-800">
                 {cleaner.cleanerName}
               </DialogTitle>
-              <div className="flex items-center gap-1 text-yellow-500">
-                <Star className="w-5 h-5 fill-current" />
-                <span className="text-sm font-medium">{cleaner.rating}</span>
+              <div className="flex items-center gap-1">
+                {renderStars(cleaner.rating || 0)} {/* Fallback to 0 if rating is undefined */}
+                <span className="text-sm font-medium text-gray-600 ml-1">
+                  ({(cleaner.rating || 0).toFixed(1)}) {/* Fallback to 0 if rating is undefined */}
+                </span>
               </div>
             </div>
           </div>
@@ -64,19 +81,19 @@ const CleanerModal = ({ cleaner, isOpen, onClose, onSelect, isSelected }) => {
             </div>
 
             <div>
-  <h3 className="font-semibold text-gray-800 mb-2">Availability</h3>
-  <div className="flex flex-wrap gap-3">
-    {cleaner.availability?.map((slot, index) => (
-      <div 
-        key={slot._id || index} 
-        className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 px-3 py-1 rounded-lg"
-      >
-        <Calendar className="w-4 h-4 text-gray-500" />
-        <span>{slot.day}: {slot.startTime} - {slot.endTime}</span>
-      </div>
-    ))}
-  </div>
-</div>
+              <h3 className="font-semibold text-gray-800 mb-2">Availability</h3>
+              <div className="flex flex-wrap gap-3">
+                {cleaner.availability?.map((slot, index) => (
+                  <div 
+                    key={slot._id || index} 
+                    className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 px-3 py-1 rounded-lg"
+                  >
+                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <span>{slot.day}: {slot.startTime} - {slot.endTime}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </ScrollArea>
 

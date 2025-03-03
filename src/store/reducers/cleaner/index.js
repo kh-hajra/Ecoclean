@@ -1,61 +1,36 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { createSlice } from '@reduxjs/toolkit';
 
-// Thunk for registering a cleaner
-export const registerCleaner = createAsyncThunk(
-    "cleaner/register",
-    async (cleanerData, { rejectWithValue }) => {
-      try {
-        const response = await axios.post(
-          "http://localhost8080/api/v1/users/registerCleaner",
-          cleanerData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        return response.data;
-      } catch (error) {
-        return rejectWithValue(
-          error.response && error.response.data
-            ? error.response.data.message
-            : error.message
-        );
-      }
-    }
-  );
-  
+const initialState = {
+  cleaner: null,
+  token: null,
+  isAuthenticated: false,
+  loading: false,
+  success: false,
+  error: null,
+};
+
 const cleanerSlice = createSlice({
   name: 'cleaner',
-  initialState: {
-    loading: false,
-    success: false,
-    error: null,
-  },
+  initialState,
   reducers: {
+    setCleaner(state, action) {
+      state.cleaner = action.payload.cleaner;
+      state.token = action.payload.token;
+      state.isAuthenticated = true;
+      state.loading = false;
+      state.error = null;
+    },
+    clearCleanerState() {
+      // Return a completely fresh state
+      return initialState;
+    },
     resetCleanerState(state) {
       state.loading = false;
       state.success = false;
       state.error = null;
     },
   },
-  extraReducers: (builder) => {
-    builder
-      .addCase(registerCleaner.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(registerCleaner.fulfilled, (state) => {
-        state.loading = false;
-        state.success = true;
-      })
-      .addCase(registerCleaner.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Failed to register cleaner';
-      });
-  },
 });
 
-export const { resetCleanerState } = cleanerSlice.actions;
+export const { setCleaner, clearCleanerState, resetCleanerState } = cleanerSlice.actions;
 export default cleanerSlice.reducer;

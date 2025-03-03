@@ -1,97 +1,499 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Trash2, Recycle, Building, Calendar, Truck, Leaf, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { CheckCircle, ArrowRight, MapPin, Calendar, Clock, MapPinIcon } from "lucide-react";
 import BackButton from '../components/ui/BackButton';
+import CleanerModal from './CleanerModal';
+import BookingDetails from './BookingDetail';
+import street from "../assets/images/street2.png";
+import BookingForm from '../components/BookingForm';
+import ServiceMap from '../components/ServiceMap';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+import BookingSummaryModal from './BookingSummaryModal';
+mapboxgl.accessToken = 'pk.eyJ1Ijoia2gtaGFqcmEiLCJhIjoiY202M2N4dHI0MTcyaDJqc28yMnNrZG02byJ9.jUssFJPm7xaP0qGAttJxzg';
 const GarbageCollection = () => {
-  const services = [
-    {
-      icon: Trash2,
-      title: 'Residential Garbage Collection',
-      description: 'Regular collection of household waste from residential areas, ensuring clean and hygienic neighborhoods.',
-      link: '/outdoor/garbage-collection/residential'
-    },
-    {
-      icon: Recycle,
-      title: 'Recycling Services',
-      description: 'Specialized collection and processing of recyclable materials to promote environmental sustainability.',
-      link: '/outdoor/garbage-collection/recycling'
-    },
+  const packageDescriptions = {
+    basic: "Ideal for light garbage collection tasks, such as small residential areas or light commercial spaces.",
+    standard: "Best for regular garbage collection needs, suitable for medium-sized residential areas or commercial spaces.",
+    premium: "Recommended for thorough or heavy-duty garbage collection, such as large residential complexes, industrial areas, or event clean-ups.",
+  };
+  const [serviceData, setServiceData] = useState(null);
+  const [bookingDetails, setBookingDetails] = useState({
+    date: '',
+    time: '',
+    location: '',
+  });
+  const navigate = useNavigate();
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [cleaners, setCleaners] = useState([]);
+  const [showMap, setShowMap] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [gettingCurrentLocation, setGettingCurrentLocation] = useState(false);
+  const [selectedCleaner, setSelectedCleaner] = useState(null);
+  const [selectedMarker, setSelectedMarker] = useState(null);
+  const [showCleanerModal, setShowCleanerModal] = useState(false);
+  const [currentCleaner, setCurrentCleaner] = useState(null);
+  const [popupZIndex, setPopupZIndex] = useState({});
+  const popupRefs = useRef({});
+ const [isBookingSummaryOpen, setIsBookingSummaryOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [bookingId, setBookingId] = useState(null);
+  useEffect(() => {
+    const fetchServiceDetails = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/services/garbage-collection');
+        if (!response.ok) throw new Error('Failed to fetch service details');
+        const data = await response.json();
+        setServiceData(data.data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchServiceDetails();
+  }, []);
+
+  const handleCleanerSelect = (cleaner) => {
+    setSelectedCleaner(cleaner.id === selectedCleaner?.id ? null : cleaner);
+    setShowCleanerModal(false);
+  };
+
+  const handleChangeCleaner = () => {
+    setSelectedCleaner(null);
+  };
+
+  const handleLocationInput = async (e) => {
+    const value = e.target.value;
+    console.log('Input value:', value);
+    setBookingDetails(prev => ({ ...prev, location: value }));
+  
+    if (value.length > 2) {
+      try {
+        const searchText = encodeURIComponent(value.trim());
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${searchText}.json`;
+  
+        // Enhanced parameters for more detailed results
+        const params = new URLSearchParams({
+          access_token: mapboxgl.accessToken,
+          country: 'PK', // Limit to Pakistan
+          types: 'address,poi,neighborhood,locality,place', // Include more specific types
+          limit: '10', // Increase the number of results
+          language: 'en', // Set language to English
+          proximity: bookingDetails.coordinates ? 
+            `${bookingDetails.coordinates.longitude},${bookingDetails.coordinates.latitude}` : 
+            '74.3587,31.5204', // Default to Lahore coordinates
+          autocomplete: 'true', // Enable autocomplete
+          fuzzyMatch: 'true', // Enable fuzzy matching
+        });
+  
+        const response = await fetch(`${url}?${params}`);
+  
+        if (!response.ok) {
+          throw new Error(`Geocoding failed: ${response.status}`);
+        }
+  
+        const data = await response.json();
+  
+        if (data.features) {
+          const suggestions = data.features.map(feature => {
+            // Extract context information
+            const contextParts = feature.context || [];
+            const neighborhood = contextParts.find(c => c.id.startsWith('neighborhood'))?.text;
+            const locality = contextParts.find(c => c.id.startsWith('locality'))?.text;
+            const place = contextParts.find(c => c.id.startsWith('place'))?.text;
+  
+            // Create a more detailed place description
+            const mainText = feature.text;
+            let secondaryText = [
+              neighborhood,
+              locality,
+              place,
+              feature.properties?.address,
+              feature.context?.map(c => c.text).join(', ')
+            ]
+              .filter(Boolean)
+              .join(', ')
+              .replace(/,\s*,/g, ',')
+              .replace(/^,\s*/, '')
+              .replace(/\s*,\s*$/, '');
+  
+            // Remove redundant information
+            secondaryText = secondaryText.replace(new RegExp(`^${mainText},\\s*`), '');
+  
+            return {
+              place_name: feature.place_name,
+              main_text: mainText,
+              secondary_text: secondaryText,
+              coordinates: {
+                longitude: feature.center[0],
+                latitude: feature.center[1]
+              },
+              // Add additional metadata for better display
+              type: feature.place_type[0],
+              relevance: feature.relevance,
+              properties: feature.properties
+            };
+          })
+          // Sort by relevance
+          .sort((a, b) => b.relevance - a.relevance)
+          // Filter out duplicate places
+          .filter((suggestion, index, self) => 
+            index === self.findIndex(s => s.place_name === suggestion.place_name)
+          );
+  
+          setLocationSuggestions(suggestions);
+        }
+      } catch (err) {
+        console.error('Error in handleLocationInput:', err);
+        toast.error('Unable to fetch location suggestions. Please try again.');
+        setLocationSuggestions([]);
+      }
+    } else {
+      setLocationSuggestions([]);
+    }
+  };
+  
+  const handleSelectLocation = (suggestion) => {
+    if (!suggestion) return;
+  
+    setBookingDetails(prev => ({
+      ...prev,
+      location: suggestion.place_name,
+      coordinates: {
+        longitude: suggestion.coordinates.longitude,
+        latitude: suggestion.coordinates.latitude
+      }
+    }));
+  
+    setLocationSuggestions([]);
+  };
    
-    {
-      icon: Calendar,
-      title: 'Scheduled Pickups',
-      description: 'Flexible scheduling options for waste collection to meet your specific needs and preferences.',
-      link: '/outdoor/garbage-collection/scheduled-pickups'
-    },
-   
-    {
-      icon: Leaf,
-      title: 'Green Waste Collection',
-      description: 'Collection and proper disposal of yard waste, leaves, and other organic materials.',
-      link: '/garbage-collection/green-waste'
-    },
+  const getCurrentLocation = () => {
+    setGettingCurrentLocation(true);
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${mapboxgl.accessToken}`
+          );
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch location details');
+          }
+          
+          const data = await response.json();
+          if (data.features && data.features.length > 0) {
+            setBookingDetails(prev => ({
+              ...prev,
+              location: data.features[0].place_name,
+              coordinates: {
+                longitude: longitude,
+                latitude: latitude
+              }
+            }));
+          }
+        } catch (error) {
+          console.error('Error getting location:', error);
+          toast.error('Error getting your location. Please try entering it manually.');
+        } finally {
+          setGettingCurrentLocation(false);
+        }
+      }, (error) => {
+        console.error('Geolocation error:', error);
+        toast.error('Unable to get your location. Please try entering it manually.');
+        setGettingCurrentLocation(false);
+      });
+    } else {
+      toast.error('Geolocation is not supported by your browser');
+      setGettingCurrentLocation(false);
+    }
+  };
+ 
+
+  const handleSearchCleaners = async () => {
+    if (bookingDetails.date && bookingDetails.time && bookingDetails.location) {
+      try {
+        const queryParams = new URLSearchParams({
+          location: bookingDetails.location,
+          specialization: "Outdoor",
+          service: "Garbage Collection",
+          date: bookingDetails.date,
+          time: bookingDetails.time,
+        }).toString();
+
+        const response = await fetch(
+          `http://localhost:8080/api/cleaners/nearby?${queryParams}`,
+          {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch cleaners');
+        }
+
+        const data = await response.json();
+
+        if (data.cleaners && Array.isArray(data.cleaners) && data.cleaners.length > 0) {
+          setCleaners(data.cleaners);
+          setShowMap(true);
+        } else {
+          alert('No cleaners found matching your criteria.');
+          setCleaners([]);
+        }
+      } catch (error) {
+        console.error('Error fetching cleaners:', error);
+        alert(error.message || 'Error loading cleaners. Please try again.');
+      }
+    } else {
+      alert('Please fill all booking details!');
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  const services = serviceData?.features || [
+    "Mechanical sweeping of streets and roads",
+    "Litter and debris removal",
+    "Gutter and curb cleaning",
+    "Stormwater drain maintenance",
+    "Graffiti removal",
+    "Leaf collection and disposal",
+    "Snow and ice removal (seasonal)",
+    "Special event clean-up",
   ];
+ const handleConfirmBooking = async () => {
+    console.log("handleConfirmBooking started");
+    setIsSubmitting(true);
+    
+    try {
+      // Validate required data
+      if (!selectedCleaner?.id || !selectedPackage?.price || !bookingDetails?.date || !bookingDetails?.duration) {
+        throw new Error('Missing required booking information');
+      }
+  
+      // Validate coordinates
+      if (!bookingDetails.coordinates || 
+          typeof bookingDetails.coordinates.longitude !== 'number' || 
+          typeof bookingDetails.coordinates.latitude !== 'number') {
+        throw new Error('Invalid location coordinates. Please select a valid location.');
+      }
+  
+      const formattedDate = new Date(bookingDetails.date);
+      
+      // Structure location data properly
+      const locationData = {
+        type: 'Point',
+        coordinates: [
+          bookingDetails.coordinates.longitude,
+          bookingDetails.coordinates.latitude
+        ],
+        address: bookingDetails.location
+      };
+  
+      const totalPrice = selectedPackage.price * bookingDetails.duration;
+  
+      const payload = {
+        userId: localStorage.getItem('userId'),
+        cleanerId: selectedCleaner.id,
+        service: serviceData.name,
+        packageDetails: {
+          name: selectedPackage.name,
+          price: selectedPackage.price,
+          duration: bookingDetails.duration
+        },
+        date: formattedDate,
+        time: bookingDetails.time,
+        duration: bookingDetails.duration,
+        location: locationData,
+        totalPrice: totalPrice,
+        status: 'Pending'
+      };
+  
+      console.log("Sending payload:", payload);
+  
+      const token = localStorage.getItem('userToken');
+      const response = await fetch('http://localhost:8080/api/bookings/confirm', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      console.log("Response received:", response.status);
+  
+      const data = await response.json();
+      console.log("Response data:", data);
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create booking');
+      }
+  
+     // After receiving the booking response:
+const bookingId = data._id || data.booking?._id;
+if (!bookingId) {
+  throw new Error('No booking ID received from server');
+}
 
+// Store both the ID and totalPrice
+localStorage.setItem('bookingId', bookingId);
+localStorage.setItem('totalPrice', totalPrice.toString());
+
+// Add detailed logging to help with debugging
+console.log('Booking created with ID:', bookingId);
+console.log('Total price:', totalPrice);
+  
+      console.log("Booking successful, stored data:", {
+        bookingId: localStorage.getItem('bookingId'),
+        totalPrice: localStorage.getItem('totalPrice')
+      });
+  
+      toast.success('Booking created successfully');
+      setIsBookingSummaryOpen(false);
+      navigate('/payment');
+      return true;
+  
+    } catch (error) {
+      console.error('Error confirming booking:', error);
+      toast.error(error.message || 'Error creating booking. Please try again.');
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleProceedToCheckout = (packageDetails) => {
+    console.log("handleProceedToCheckout called with:", packageDetails);
+    setSelectedPackage(packageDetails);
+    setIsBookingSummaryOpen(true);
+  };
   return (
-    <div className="bg-gradient-to-b from-green-50 to-white min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-       <BackButton to="/outdoor" /> 
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-            Garbage Collection <span className="text-green-600">Services</span>
-          </h1>
-          <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-            Efficient and eco-friendly waste management solutions for residential and commercial needs.
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#f8f9ff]">
+    <BackButton to="/outdoor" />
+    <div className="relative  lg:h-[400px] flex items-center justify-center overflow-hidden">
+  {/* Image */}
+  <img
+      src={street}
+      alt="Street Cleaning"
+      className=" mt-20 w-[800px] sm:w-[900px] lg:w-[1000px] object-contain"
+    />
 
-        <div className="mt-10">
-          <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
-            {services.map((service, index) => (
-              <div
-                key={index}
-                className="relative bg-white pt-5 px-4 pb-12 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-              >
-                <div>
-                  <div className="absolute top-0 left-0 w-full h-1 bg-green-600"></div>
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <service.icon className="h-10 w-10 text-green-600" aria-hidden="true" />
-                    </div>
-                    <div className="ml-5">
-                      <h3 className="text-lg font-medium text-gray-900">{service.title}</h3>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <p className="text-base text-gray-500">{service.description}</p>
-                  </div>
-                </div>
-                <div className="absolute bottom-0 inset-x-0 bg-gray-50 px-4 py-4 sm:px-6">
-                  <div className="text-sm">
-                    <Link to={service.link} className="font-medium text-green-600 hover:text-green-500">
-                      Learn more<span className="sr-only"> about {service.title}</span>
-                      <ArrowRight className="inline-block ml-2 h-5 w-5" aria-hidden="true" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+<div className="absolute z-10 text-center px-8 max-w-4xl mt-2">
+  <p className="text-sm font-medium mb-3 text-white tracking-wide">We are</p>
+  <h1 className="text-5xl sm:text-6xl lg:text-8xl font-bold tracking-tight leading-tight font-serif" 
+    style={{ fontFamily: 'Rische, serif', whiteSpace: 'nowrap' }}>
+  <span className="text-white">Garbage Coll</span>
+  <span className="text-black">ect</span>
+  <span className="text-white">ion</span>
+</h1>
 
-        <div className="mt-20 text-center">
-          <Link
-            to="/contact"
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+  <p className="text-lg sm:text-xl lg:text-2xl text-gray-200 pt-5 max-w-2xl mx-auto">
+    <span className="text-black">Efficient</span> waste collection <span className="text-black">solutions</span> for cleaner streets and <span className="text-black">greener communities.</span>
+  </p>
+
+
+
+    {/* Ratings */}
+    <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-8">
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4].map((star) => (
+          <svg
+            key={star}
+            className="w-5 h-5 text-yellow-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
           >
-            Request a Quote
-            <ArrowRight className="ml-2 -mr-1 h-5 w-5" aria-hidden="true" />
-          </Link>
-        </div>
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+        <span className="text-sm text-black-300 ml-2">5000+ Client reviews</span>
       </div>
+    </div>
+  </div>
+</div>
+
+      {/* Main Container for Booking Form, Map, and Pricing */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Booking Form Section */}
+        <div className="mb-8">
+          <BookingForm
+            bookingDetails={bookingDetails}
+            setBookingDetails={setBookingDetails}
+            handleSearchCleaners={handleSearchCleaners}
+            gettingCurrentLocation={gettingCurrentLocation}
+            locationSuggestions={locationSuggestions}
+            handleLocationInput={handleLocationInput}
+            handleSelectLocation={handleSelectLocation}
+            getCurrentLocation={getCurrentLocation}
+            services={services}
+          />
+        </div>
+
+        {/* Map and Pricing Section */}
+        {showMap && (
+          <div className="space-y-8">
+            {/* Map Section */}
+            <div>
+              <ServiceMap
+                cleaners={cleaners}
+                setCurrentCleaner={setCurrentCleaner}
+                setShowCleanerModal={setShowCleanerModal}
+              />
+            </div>
+
+            {/* Pricing Section */}
+            {selectedCleaner && (
+              <div>
+                <BookingDetails
+                  selectedCleaner={selectedCleaner}
+                  service={serviceData}
+                  bookingDetails={bookingDetails}
+                  onChangeCleaner={handleChangeCleaner}
+                  packageDescriptions={packageDescriptions}
+                  onProceed={handleProceedToCheckout}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <CleanerModal
+        cleaner={currentCleaner}
+        isOpen={showCleanerModal}
+        onClose={() => setShowCleanerModal(false)}
+        onSelect={handleCleanerSelect}
+        isSelected={selectedCleaner?.id === currentCleaner?.id}
+      />
+       {isBookingSummaryOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
+          <BookingSummaryModal
+            onPaymentClick={handleConfirmBooking} // Ensure this is passed correctly
+            selectedCleaner={selectedCleaner}
+            service={serviceData}
+            bookingDetails={bookingDetails}
+            selectedPackage={selectedPackage}
+            onEdit={() => setIsBookingSummaryOpen(false)}
+            isSubmitting={isSubmitting}
+            onClose={() => setIsBookingSummaryOpen(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };
 
-export default GarbageCollection;
-
+export default  GarbageCollection;

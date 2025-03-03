@@ -34,7 +34,8 @@ export const FORGOT_PASSWORD_VERIFY_OTP_REQUEST_AUTH =
 export const VERIFY_OTP_REQUEST = "VERIFY_OTP_REQUEST";
 export const VERIFY_OTP_SUCCESS = "VERIFY_OTP_SUCCESS";
 export const VERIFY_OTP_FAIL = "VERIFY_OTP_FAIL";
-
+// Add the missing logout action type
+export const LOGOUT_REQUEST = "LOGOUT_REQUEST";
 // Authentication Action Types
 export const LOGIN_REQUEST = "LOGIN_REQUEST";
 export const LOGIN_SUCCESS = "LOGIN_SUCCESS";
